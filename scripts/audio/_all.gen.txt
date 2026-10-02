@@ -9,52 +9,51 @@
 #voice batuyet|vi-VN-HoaiMyNeural|-16%|-7Hz|en-US-JennyNeural|-7Hz
 #voice bachanh|vi-VN-HoaiMyNeural|-12%|-4Hz|en-US-JennyNeural|-4Hz
 #voice friend|vi-VN-HoaiMyNeural|-4%|+9Hz|en-US-AnaNeural|+0Hz
-b_attack_0|my|Quái bắn phép kìa! Trả lời đúng để né nhé!
-b_attack_1|my|Cẩn thận! Phép bóng tối bay tới!
-b_attack_2|my|Ối, quái bắn phép! Trả lời nhanh nào!
-b_attack_3|my|Phép tím bay tới kìa! Né đi Nhím!
-b_attack_4|my|Quái làm phép rồi! Trả lời đúng là né được!
+b_back_0|my|Nhím ơi, quay lại! Đường đúng ở bên kia!
+b_back_1|my|Quay lại ngã rẽ nào, đi đường bên kia nhé!
+b_back_2|my|Mình quay lại đi đường đúng nhé!
 b_boost_0|my|Đường tắt cầu vồng! Nhanh quá!
 b_boost_1|my|Vút! Nhím vượt lên rồi!
 b_boost_2|my|Cầu vồng đẩy Nhím bay vèo!
 b_boost_3|my|Nhanh như gió!
 b_boost_4|my|Vượt lên nào!
+b_deadend_0|my|Ôi, đường cụt rồi!
+b_deadend_1|my|Ối, đá chắn đường rồi!
+b_deadend_2|my|Đường này không đi được rồi!
+b_deadend_3|my|Hết đường rồi Nhím ơi!
 b_dodge_0|my|Né được rồi!
 b_dodge_1|my|Vèo, trượt rồi nhé!
 b_dodge_2|my|Phép không trúng Nhím!
 b_dodge_3|my|Né giỏi quá!
 b_dodge_4|my|Hụt rồi, quái ơi!
 b_dodge_5|my|Nhím nhanh hơn phép!
-b_fly_0|my|Bay lên nào!
-b_fly_1|my|Chạm đôi cánh để bay qua!
-b_fly_2|my|Có chướng ngại kìa! Bay lên!
-b_fly_3|my|Vỗ cánh bay qua nhé!
-b_fly_4|my|Bay qua đi Nhím!
-b_fly_5|my|Chạm nút cánh nào!
-b_fly_6|my|Ối, cái gì chắn đường kìa! Bay lên!
-b_fly_7|my|Nhím ơi, bay lên!
+b_escape_0|my|Thoát rồi! Quái tụt lại phía sau!
+b_escape_1|my|Đúng đường rồi! Chạy mau!
+b_escape_2|my|Quái đuổi không kịp rồi!
+b_escape_3|my|Hay lắm, bỏ xa quái rồi!
+b_escape_4|my|Đường đúng rồi, chạy tiếp nào!
+b_fly_0|my|Nháy nút lên hai lần để bay nào!
+b_fly_1|my|Bay lên nào! Nháy hai lần nhé!
+b_fly_2|my|Có chướng ngại kìa! Nháy nút lên hai lần!
+b_fly_3|my|Nháy nhanh hai lần để bay qua nhé!
+b_fly_4|my|Bay qua đi Nhím! Nháy hai lần!
+b_fly_5|my|Nhím ơi, nháy nút lên hai lần nào!
 b_flyok_0|my|Vèo! Bay qua rồi!
 b_flyok_1|my|Giỏi quá, bay cao ghê!
 b_flyok_2|my|Bay đẹp quá!
 b_flyok_3|my|Qua rồi!
 b_flyok_4|my|Nhím bay như chim!
 b_flyok_5|my|Hay lắm!
-b_fork_0|my|Chạm vào biển đường đúng nhé!
-b_fork_1|my|Đường nào đây ta?
-b_fork_2|my|Chọn một biển nhé Nhím!
-b_fork_3|my|Ngã rẽ kìa! Chạm biển đúng nào!
-b_fork_4|my|Đường tắt cầu vồng ở bên nào nhỉ?
-b_fork_5|my|Nhím chọn đường nào?
 b_gate_0|my|Sắp tới đích rồi!
 b_gate_1|my|Cố lên, gần tới rồi!
 b_gate_2|my|Đích ở ngay phía trước!
-b_hold_0|my|Giữ nút để chạy nào!
-b_hold_1|my|Nhím ơi, giữ nút ngựa để chạy nhé!
+b_hold_0|my|Giữ nút lên để chạy nào!
+b_hold_1|my|Nhím ơi, giữ nút lên để chạy nhé!
 b_hold_2|my|Chạy tiếp thôi Nhím!
-b_hold_3|my|Giữ ngón tay trên nút là chạy đó!
+b_hold_3|my|Giữ nút mũi tên lên là chạy đó!
 b_hold_4|my|Mình chạy tiếp nhé!
 b_hold_5|my|Đường đua đang chờ Nhím đó!
-b_hold_6|my|Nhấn giữ nút để phi nhanh nào!
+b_hold_6|my|Giữ nút lên để phi nhanh nào!
 b_hold_7|my|Cố lên Nhím, chạy nào!
 b_laugh_0|nmm|Hô hô hô! Chưa đúng rồi!
 b_laugh_1|nmm|Hi hi! Thử lại đi nào!
@@ -66,19 +65,11 @@ b_miss_0|my|Ôi, phép bay trượt rồi!
 b_miss_1|my|Hụt mất rồi!
 b_miss_2|my|Phép chưa trúng, cố lên!
 b_miss_3|my|Ối, quái chạy mất rồi!
-b_mud_0|my|Ôi, đường này lầy quá! Cố lên!
-b_mud_1|my|Đường vòng rồi, chạy tiếp nào!
-b_mud_2|my|Bì bõm! Chạy chậm một chút thôi!
-b_mud_3|my|Đường bùn rồi, không sao!
 b_my_turn_0|twi|Đến lượt Nhím!
 b_my_turn_1|twi|Nhím bắn phép nào!
 b_my_turn_2|twi|Phép thuật tình bạn đây!
 b_my_turn_3|twi|Nhím làm phép nè!
 b_my_turn_4|twi|Đến lượt mình rồi!
-b_near_0|my|Đuổi kịp rồi! Trả lời đúng để bắn phép!
-b_near_1|my|Sắp bắt được rồi! Làm phép nào!
-b_near_2|my|Quái ở ngay trước mặt! Trả lời nào!
-b_near_3|my|Gần lắm rồi! Bắn phép thôi!
 b_nmm_hurt_0|nmm|Ối! Không thể nào!
 b_nmm_hurt_1|nmm|Hừm! Ngọc Hài Hoà sáng thêm rồi!
 b_nmm_hurt_2|nmm|Phép gì mà sáng thế!
@@ -120,12 +111,9 @@ b_purify_2|my|Bạn ấy về phe mình rồi!
 b_purify_3|my|Hoan hô! Bóng tối chạy mất rồi!
 b_purify_4|my|Bạn ấy đang nhảy múa kìa!
 b_purify_5|my|Hết bị bóng tối nhập rồi!
-b_tap_0|my|Chạm vào ngôi sao đúng nhé!
-b_tap_1|my|Ngôi sao nào đây ta?
-b_tap_2|my|Chạm nhẹ vào ngôi sao nào!
-b_tap_3|my|Nhím chọn ngôi sao nào?
-b_tap_4|my|Ngôi sao đang chờ Nhím chạm đó!
-b_tap_5|my|Thử chạm một ngôi sao xem!
+b_stubmon_0|my|Ối, có quái ở đây! Quay lại thôi!
+b_stubmon_1|my|Úi, quái bóng tối trốn ở đây! Chạy ra thôi!
+b_stubmon_2|my|Ối, đường này có quái! Quay lại nào!
 b_zap_0|my|Trúng rồi!
 b_zap_1|my|Phép của Nhím mạnh quá!
 b_zap_2|my|Bùm! Trúng quái rồi!
@@ -155,41 +143,48 @@ cl_2|nar|Nữ hoàng Bóng Đêm biến mất… và bác Hanh trở lại thàn
 cl_3|bachanh|Bác được cứu rồi! Cảm ơn Nhím! Từ nay bác sẽ đua cùng Nhím nhé!
 cl_4|nar|Trời sáng rồi! Nhím đã thắng Nữ hoàng Bóng Đêm!
 f_bachanh_ahead|bachanh|Bác vượt lên rồi nè!
+f_bachanh_back|bachanh|Nhím ơi, quay lại! Đường đúng ở đây nè!
 f_bachanh_first|bachanh|Bác về trước rồi! Lần sau Nhím thắng bác nhé!
 f_bachanh_hi|bachanh|Bác Hanh đua với Nhím nhé!
 f_bachanh_lose|bachanh|Không sao Nhím ơi, mình chơi lại nào!
 f_bachanh_wait|bachanh|Nhím ơi, bác chờ nè!
 f_bachanh_win|bachanh|Nhím về nhất! Bác tự hào lắm!
 f_bacuong_ahead|ba|Ba vượt lên nè!
+f_bacuong_back|ba|Nhím ơi, quay lại! Đường bên này cơ con!
 f_bacuong_first|ba|Ba về trước rồi! Lần sau Nhím thắng ba nhé!
 f_bacuong_hi|ba|Nhím ơi, đua với ba nào! Ba nhanh như tia chớp đó!
 f_bacuong_lose|ba|Không sao con ơi, mình thử lại nhé! Ba tin con!
 f_bacuong_wait|ba|Nhím ơi, chạy tiếp đi con!
 f_bacuong_win|ba|Nhím về nhất rồi! Con gái ba giỏi quá!
 f_batuyet_ahead|batuyet|Bà bay lên trước rồi nè!
+f_batuyet_back|batuyet|Nhím ơi, quay lại! Bà ở đường bên này nè!
 f_batuyet_first|batuyet|Bà về trước rồi! Lần sau Nhím thắng bà nhé!
 f_batuyet_hi|batuyet|Bà đua cùng Nhím đây! Bà bay nhẹ như mây!
 f_batuyet_lose|batuyet|Suýt nữa thôi cháu yêu! Mình thử lại nhé!
 f_batuyet_wait|batuyet|Bà chờ Nhím nhé!
 f_batuyet_win|batuyet|Nhím về nhất! Bà vui quá!
 f_meyen_ahead|me|Mẹ ở đằng trước nè Nhím!
+f_meyen_back|me|Nhím ơi, quay lại đây con! Đường này mới đúng!
 f_meyen_first|me|Mẹ về trước rồi! Lần sau Nhím thắng mẹ nha!
 f_meyen_hi|me|Nhím đua với mẹ nhé! Cố lên con yêu!
 f_meyen_lose|me|Suýt nữa thôi con! Mình chơi lại nhé!
 f_meyen_wait|me|Mẹ chờ Nhím nè!
 f_meyen_win|me|Nhím về nhất! Mẹ thương Nhím nhất!
 f_ongcuong_ahead|ong|Ông vượt lên rồi nhé!
+f_ongcuong_back|ong|Cháu ơi, quay lại! Đi đường này với ông!
 f_ongcuong_first|ong|Ông về trước rồi! Lần sau cháu thắng ông nhé!
 f_ongcuong_hi|ong|Ông cũng đua với cháu nhé! Ông chạy khoẻ lắm!
 f_ongcuong_lose|ong|Không sao cháu ơi, thử lại nào!
 f_ongcuong_wait|ong|Cháu ông chạy tiếp nào!
 f_ongcuong_win|ong|Cháu ông về nhất! Giỏi quá!
 final_2|nmm|Ha ha ha! Đấu với ta trên trời nào, cô bé!
-final_3|my|Trả lời đúng để né phép, và bắn phép vào Nữ hoàng nhé!
+final_3|my|Bay qua vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!
+fly_teach|my|Có chướng ngại kìa! Nháy nhanh nút lên hai lần để bay qua nhé!
 go|my|Chạy nào!
 hunt_done|my|Cứu được cả hai bạn rồi! Nhím giỏi quá!
 hunt_free|my|Bong bóng vỡ rồi! Bạn được tự do rồi!
 hunt_next|my|Còn một bạn nữa! Đuổi tiếp nào!
+keys|my|Giữ nút lên để chạy. Nháy nút lên hai lần để bay. Tới ngã rẽ thì bấm nút trái hoặc nút phải nhé!
 ln_a|my|a
 ln_aa|my|ớ
 ln_aw|my|á
@@ -249,7 +244,7 @@ lo_v|my|vờ… vịt
 lo_x|my|xờ… xe
 lo_y|my|i dài… yên
 lose|my|Hết tim rồi. Suýt nữa thôi!
-lv_1_1|nar|Rừng nấm. Hôm nay Nhím đua cùng cả nhà! Giữ nút để chạy, gặp chướng ngại thì bay lên nhé.
+lv_1_1|nar|Rừng nấm. Hôm nay Nhím đua cùng cả nhà!
 lv_1_2|nar|Ối! Quái bóng tối trong rừng đuổi theo Nhím! Chạy mau tới cổng an toàn nào!
 lv_2_1|nar|Làng ngựa nhỏ {Ponyville}. Cả nhà đua qua làng nào!
 lv_2_2|nar|Yêu tinh và rồng nhỏ bắt bạn {Pinkie Pie} với bạn {Fluttershy} trong bong bóng! Đuổi theo cứu bạn nào!
@@ -640,6 +635,7 @@ tl_huyen|my|dấu huyền
 tl_nang|my|dấu nặng
 tl_nga|my|dấu ngã
 tl_sac|my|dấu sắc
+turn_teach|my|Đáp án nằm trên biển ở đầu mỗi đường. Bấm nút trái hoặc nút phải để chọn đường nhé!
 unlock_aura|my|Nhím có hào quang sao lấp lánh rồi!
 unlock_crown|my|Nhím có vòng hoa mới rồi!
 unlock_trail|my|Nhím có vệt cầu vồng mới rồi!

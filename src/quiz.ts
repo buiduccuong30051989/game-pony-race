@@ -118,7 +118,7 @@ export function fromKey(key: string, n: number, def: QuizDef, r: Rnd): Question 
     if ((m = /^A:(\d+)\+(\d+)$/.exec(key))) return addQ(+m[1], +m[2], n, Math.max(def.maxN, +m[1] + +m[2]), r);
     if ((m = /^S:(\d+)-(\d+)$/.exec(key))) return subQ(+m[1], +m[2], n, Math.max(def.maxN, +m[1]), r);
     if ((m = /^M:(\d+)\+\?=(\d+)$/.exec(key))) return missQ(+m[1], +m[2], n, Math.max(def.maxN, +m[2]), r);
-    if ((m = /^W:(.+)$/.exec(key)) && WORDS[m[1]] && n >= 3) return wordQ(m[1], n, def, r);
+    if ((m = /^W:(.+)$/.exec(key)) && WORDS[m[1]]) return wordQ(m[1], n, def, r);
   } catch { /* khoá hỏng */ }
   return null;
 }
@@ -134,11 +134,11 @@ function fresh(kind: QKind, n: number, def: QuizDef, r: Rnd): Question {
 }
 
 /**
- * `count` câu cho 1 bài. `n` = số lựa chọn mỗi lượt (2 ở ngã rẽ, 3 ở sao). Ghép tiếng chỉ có khi n ≥ 3.
+ * `count` câu cho 1 bài. `n` = số lựa chọn mỗi lượt (2: ngã rẽ trái / phải). Ghép tiếng: mỗi bước 1 lượt.
  * `weak`: khoá câu bé từng sai → chèn tối đa 2 câu (ưu tiên sai nhiều).
  */
 export function makeQuiz(def: QuizDef, count: number, n: number, weak: Record<string, number>, r: Rnd): Question[] {
-  const kinds = def.kinds.filter((k) => k !== 'word' || (n >= 3 && def.words.length));
+  const kinds = def.kinds.filter((k) => k !== 'word' || def.words.length);
   const out: Question[] = [];
   const used = new Set<string>();
   const review = Object.entries(weak).sort((a, b) => b[1] - a[1]).map(([k]) => fromKey(k, n, def, r)).filter((q): q is Question => !!q).slice(0, 2);

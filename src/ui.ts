@@ -14,7 +14,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 export const els = {
   hud: $('hud'), hearts: $('hearts'), gems: $('gems'), bar: $('bar'), harmony: $('harmony'), target: $('target'),
   mePhoto: $<HTMLImageElement>('me-photo'), home: $('home'), panel: $('panel'), panelBody: $('panel-body'), repeat: $('repeat'),
-  run: $('run-btn'), fly: $('fly-btn'), countdown: $('countdown'), toast: $('toast'), flash: $('flash'), confetti: $('confetti'),
+  keys: $('keys'), keyLeft: $('key-left'), keyUp: $('key-up'), keyRight: $('key-right'), keyUpLabel: $('key-up-label'), countdown: $('countdown'), toast: $('toast'), flash: $('flash'), confetti: $('confetti'),
   map: $('map'), mapWorlds: $('map-worlds'), mapFinal: $('map-final'), mapGems: $('map-gems'), mapHero: $('map-hero'),
   result: $('result'), resTitle: $('res-title'), resPhoto: $<HTMLImageElement>('res-photo'), resFaces: $('res-faces'), resPlace: $('res-place'),
   resGems: $('res-gems'), resMap: $('res-map'), resRetry: $('res-retry'), resNext: $('res-next'),
@@ -24,7 +24,7 @@ export const els = {
 // ------------------------------------------------------------------ HUD
 
 export function showPlay(on: boolean): void {
-  els.hud.hidden = !on; els.home.hidden = !on; els.run.hidden = !on; els.fly.hidden = !on;
+  els.hud.hidden = !on; els.home.hidden = !on; els.keys.hidden = !on;
   if (!on) { els.panel.hidden = true; els.harmony.hidden = true; els.target.hidden = true; }
 }
 
@@ -130,10 +130,20 @@ export function solvePanel(ans: string): void {
   if (q) { q.classList.remove('eq-q'); q.textContent = ans; (q as HTMLElement).style.color = '#58cc02'; }
 }
 
-// ------------------------------------------------------------------ nút chạy / bay
+// ------------------------------------------------------------------ bảng phím
 
-export function flyHint(on: boolean): void { els.fly.classList.toggle('hint', on); }
-export function runHint(on: boolean): void { els.run.classList.toggle('hint', on); }
+/** Làm sáng phím cần bấm: 'run' (giữ ↑), 'fly' (nháy ↑ 2 lần), 'turn' (← / →), null = bình thường. */
+export function keyHint(what: 'run' | 'fly' | 'turn' | null): void {
+  els.keys.className = what ?? '';
+  els.keyUp.classList.toggle('hint', what === 'run' || what === 'fly');
+  els.keyLeft.classList.toggle('hint', what === 'turn');
+  els.keyRight.classList.toggle('hint', what === 'turn');
+  els.keyUpLabel.textContent = what === 'fly' ? 'nháy 2 lần: bay!' : what === 'run' ? 'giữ để chạy' : 'giữ: chạy · 2 lần: bay';
+}
+/** Phím đang bấm (lún xuống). */
+export function keyDown(key: 'left' | 'up' | 'right', on: boolean): void {
+  ({ left: els.keyLeft, up: els.keyUp, right: els.keyRight })[key].classList.toggle('down', on);
+}
 
 // ------------------------------------------------------------------ hiệu ứng
 

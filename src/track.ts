@@ -1,6 +1,7 @@
 // Đường đua: đường tâm lấy mẫu mỗi 1 m (vị trí, hướng, độ cao), có khúc cua, cầu vồng (đường vồng lên qua suối),
-// ngã rẽ (đường tách 2 nhánh rồi nhập lại). Đường hở (đua / bị đuổi: có vạch xuất phát + đích) hoặc vòng kín (đuổi quái,
-// màn cuối trên trời: chạy mãi tới khi xong).
+// ngã rẽ THẬT hình chữ Y: đường chính bẻ sang 1 bên 40° rồi bẻ về (đường tiếp tục), nhánh kia bẻ sang bên ngược lại và
+// cụt sau ~36 m (Track riêng tạo bằng Track.branch; rẽ sai thì Nhím chạy vào đó rồi quay ra).
+// Đường hở (đua / bị đuổi: có vạch xuất phát + đích) hoặc vòng kín (đuổi quái, màn cuối trên trời: chạy mãi tới khi xong).
 //
 // Hệ trục: tiến = (tx, 0, tz) (mẫu), phải = (−tz, 0, tx) (camera đứng sau nhìn tới → bên phải màn hình).
 import * as THREE from 'three';
@@ -16,7 +17,17 @@ export function mulberry32(seed: number): () => number {
 
 export interface Span { s0: number; s1: number }
 export interface Bridge extends Span { h: number }
-export interface Fork extends Span { w: number }
+/** Ngã rẽ: ở quãng s đường chính rẽ `dir` (−1 trái, +1 phải). */
+export interface Turn { s: number; dir: -1 | 1 }
+
+/** Ngã rẽ: bẻ TURN_ANGLE trong TURN_LEN m, đi thẳng TURN_HOLD m, bẻ về trong TURN_LEN m. */
+export const TURN_LEN = 14;
+export const TURN_HOLD = 10;
+export const TURN_ANGLE = (40 * Math.PI) / 180;
+/** Tổng chiều dài 1 ngã rẽ trên đường chính. */
+export const JOG_LEN = TURN_LEN * 2 + TURN_HOLD;
+/** Chiều dài nhánh cụt. */
+export const BRANCH_LEN = 36;
 
 export interface TrackOpts {
   closed: boolean;
@@ -25,7 +36,9 @@ export interface TrackOpts {
   /** chiều rộng mặt đường chính */
   width: number;
   bridges: Span[];
-  forks: Span[];
+  turns?: Turn[];
+  /** đường tâm có sẵn (nhánh cụt) thay vì tự sinh */
+  points?: [number, number][];
   /** độ cao nền (màn cuối bay trên trời) */
   baseY?: number;
   /** đường vòng kín: biên độ lượn lên xuống (màn trời) */
@@ -34,22 +47,14 @@ export interface TrackOpts {
 
 export interface Pose { pos: THREE.Vector3; yaw: number; pitch: number; fwd: THREE.Vector3; right: THREE.Vector3 }
 
-/** Độ tách nhánh của ngã rẽ: 0 → 1 → 0 dọc theo đoạn (phần tách / giữ / nhập). */
-function forkShape(u: number): number {
-  const ss = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-  return ss(0, 0.3, u) * (1 - ss(0.72, 1, u));
-}
-
 export class Track {
   readonly closed: boolean;
   readonly length: number;
   readonly width: number;
-  /** nhánh rẽ rộng (mỗi nhánh) */
-  readonly branchWidth = 4.4;
   readonly px: Float32Array; readonly pz: Float32Array; readonly py: Float32Array;
   readonly tx: Float32Array; readonly tz: Float32Array;
   readonly bridges: Bridge[];
-  readonly forks: Fork[];
+  readonly turns: Turn[];
   readonly baseY: number;
   readonly bounds = new THREE.Box3();
   private readonly grid = new Map<string, number[]>();
@@ -60,7 +65,7 @@ export class Track {
     this.width = opts.width;
     this.baseY = opts.baseY ?? 0;
     const rnd = mulberry32(opts.seed);
-    const pts = opts.closed ? Track.loopPoints(opts.length, rnd) : Track.openPoints(opts, rnd);
+    const pts = opts.points ?? (opts.closed ? Track.loopPoints(opts.length, rnd) : Track.openPoints(opts, rnd));
     const n = pts.length;
     this.length = opts.closed ? n : n - 1;
     this.px = new Float32Array(n); this.pz = new Float32Array(n); this.py = new Float32Array(n);
@@ -73,7 +78,7 @@ export class Track {
       this.tx[i] = dx; this.tz[i] = dz;
     }
     this.bridges = opts.bridges.map((b) => ({ ...b, h: 3.6 }));
-    this.forks = opts.forks.map((f) => ({ ...f, w: 5.2 }));
+    this.turns = opts.turns ?? [];
     const wave = opts.wave ?? 0;
     for (let i = 0; i < n; i++) {
       let y = this.baseY;
@@ -91,18 +96,35 @@ export class Track {
     }
   }
 
-  /** Đường hở: hướng đi lượn ngẫu nhiên (độ cong đổi mượt), thẳng ở cầu / ngã rẽ, không tự cắt. */
+  /**
+   * Đường hở: hướng đi lượn ngẫu nhiên (độ cong đổi mượt, kéo dần về hướng ban đầu để không cuộn tròn), thẳng ở cầu và
+   * trước / sau ngã rẽ, bẻ sang rồi bẻ về ở mỗi ngã rẽ; không tự cắt.
+   */
   private static openPoints(opts: TrackOpts, rnd: () => number): [number, number][] {
-    const calm = (s: number) => [...opts.bridges, ...opts.forks].some((sp) => s > sp.s0 - 14 && s < sp.s1 + 10);
-    for (let attempt = 0; attempt < 60; attempt++) {
+    const turns = opts.turns ?? [];
+    const calm = (s: number) => opts.bridges.some((sp) => s > sp.s0 - 14 && s < sp.s1 + 10) || turns.some((t) => s > t.s - 26 && s < t.s + JOG_LEN + 12);
+    for (let attempt = 0; attempt < 80; attempt++) {
       const pts: [number, number][] = [];
       let x = 0, z = 0, yaw = 0, k = 0, kGoal = 0, segLeft = 40;
       for (let s = 0; s <= opts.length; s++) {
         pts.push([x, z]);
-        if (--segLeft <= 0) { segLeft = 34 + rnd() * 46; kGoal = (rnd() * 2 - 1) / 38; if (Math.abs(kGoal) < 1 / 140) kGoal = 0; }
-        const goal = calm(s) || s < 30 || s > opts.length - 40 ? kGoal * 0.12 : kGoal;
-        k += (goal - k) * 0.06;
-        yaw += k;
+        const turn = turns.find((t) => s >= t.s && s < t.s + JOG_LEN);
+        if (turn) {
+          // rẽ trái = yaw tăng (tiến quay về phía −phải); bẻ sang, đi thẳng, bẻ về
+          const u = s - turn.s;
+          if (u < TURN_LEN) yaw += (-turn.dir * TURN_ANGLE) / TURN_LEN;
+          else if (u >= TURN_LEN + TURN_HOLD) yaw -= (-turn.dir * TURN_ANGLE) / TURN_LEN;
+          k = 0;
+        } else {
+          if (--segLeft <= 0) {
+            segLeft = 34 + rnd() * 46;
+            kGoal = (rnd() * 2 - 1) / 38 - yaw * 0.006;
+            if (Math.abs(kGoal) < 1 / 140) kGoal = 0;
+          }
+          const goal = calm(s) || s < 30 || s > opts.length - 40 ? kGoal * 0.12 : kGoal;
+          k += (goal - k) * 0.06;
+          yaw += k;
+        }
         x += Math.sin(yaw); z += Math.cos(yaw);
       }
       if (!Track.selfIntersects(pts, 26)) return pts;
@@ -175,24 +197,14 @@ export class Track {
     return { i, j, f };
   }
 
-  /** Ngã rẽ đang ở (nếu có) + độ tách 0..w ở quãng s. */
-  forkAt(s: number): { fork: Fork | null; off: number } {
-    const w = this.wrap(s);
-    for (const f of this.forks) if (w >= f.s0 && w <= f.s1) return { fork: f, off: f.w * forkShape((w - f.s0) / (f.s1 - f.s0)) };
-    return { fork: null, off: 0 };
-  }
-
   /** Độ cao mặt đường ở s. */
   y(s: number): number {
     const { i, j, f } = this.sample(s);
     return this.py[i] + (this.py[j] - this.py[i]) * f;
   }
 
-  /**
-   * Vị trí trên đường ở quãng s, lệch ngang `lat` (m, + = phải), nhánh `side` (−1 trái / +1 phải) nếu đang ở ngã rẽ.
-   * Ghi vào `out` (tránh cấp phát mỗi khung).
-   */
-  pose(s: number, lat: number, side: number, out: Pose): Pose {
+  /** Vị trí trên đường ở quãng s, lệch ngang `lat` (m, + = phải). Ghi vào `out` (tránh cấp phát mỗi khung). */
+  pose(s: number, lat: number, out: Pose): Pose {
     const { i, j, f } = this.sample(s);
     const x = this.px[i] + (this.px[j] - this.px[i]) * f;
     const z = this.pz[i] + (this.pz[j] - this.pz[i]) * f;
@@ -200,8 +212,7 @@ export class Track {
     const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
     const y0 = this.py[i] + (this.py[j] - this.py[i]) * f;
     const dy = this.py[j] - this.py[i];
-    const off = side ? side * this.forkAt(s).off : 0;
-    const L = lat + off;
+    const L = lat;
     out.right.set(-tz, 0, tx);
     out.fwd.set(tx, 0, tz);
     out.pos.set(x - tz * L, y0, z + tx * L);
@@ -216,22 +227,33 @@ export class Track {
   roadClearance(x: number, z: number): number {
     const cx = Math.floor(x / this.cell), cz = Math.floor(z / this.cell);
     let best = Infinity;
-    const p = Track.newPose();
     for (let gx = cx - 2; gx <= cx + 2; gx++) for (let gz = cz - 2; gz <= cz + 2; gz++) {
-      for (const i of this.grid.get(`${gx},${gz}`) ?? []) {
-        const { fork, off } = this.forkAt(i);
-        if (fork && off > 0.4) {
-          for (const side of [-1, 1]) {
-            this.pose(i, 0, side, p);
-            best = Math.min(best, Math.hypot(p.pos.x - x, p.pos.z - z) - this.branchWidth / 2);
-          }
-          if (off < this.width / 2) best = Math.min(best, Math.hypot(this.px[i] - x, this.pz[i] - z) - this.width / 2);
-        } else {
-          best = Math.min(best, Math.hypot(this.px[i] - x, this.pz[i] - z) - this.width / 2);
-        }
-      }
+      for (const i of this.grid.get(`${gx},${gz}`) ?? []) best = Math.min(best, Math.hypot(this.px[i] - x, this.pz[i] - z) - this.width / 2);
     }
     return best;
+  }
+
+  /** Ngã rẽ đang ở gần (đoạn từ `before` m trước tới hết khúc rẽ). */
+  turnNear(s: number, before = 0): Turn | null {
+    return this.turns.find((t) => s > t.s - before && s < t.s + JOG_LEN) ?? null;
+  }
+
+  /**
+   * Nhánh cụt ở ngã rẽ `t`: bắt đầu đúng điểm rẽ, bẻ NGƯỢC hướng đường chính rồi chạy thẳng, dài `len` m.
+   * `reverse`: cùng nhánh nhưng đi ngược (từ cuối nhánh về ngã rẽ) để Nhím quay lại.
+   */
+  static branch(main: Track, t: Turn, len: number, reverse = false): Track {
+    const p = Track.newPose();
+    main.pose(t.s, 0, p);
+    let x = p.pos.x, z = p.pos.z, yaw = p.yaw;
+    const pts: [number, number][] = [];
+    for (let i = 0; i <= len; i++) {
+      pts.push([x, z]);
+      if (i < TURN_LEN) yaw += (t.dir * TURN_ANGLE) / TURN_LEN;
+      x += Math.sin(yaw); z += Math.cos(yaw);
+    }
+    if (reverse) pts.reverse();
+    return new Track({ closed: false, length: len, seed: 0, width: main.width * 0.85, bridges: [], points: pts, baseY: main.baseY });
   }
 
   /** Quãng s đang ở trên cầu vồng không. */
@@ -251,7 +273,7 @@ export function ribbon(track: Track, s0: number, s1: number, half: number | ((s:
   const p = Track.newPose();
   for (let k = 0; k <= steps; k++) {
     const s = s0 + ((s1 - s0) * k) / steps;
-    track.pose(s, center(s), 0, p);
+    track.pose(s, center(s), p);
     const h = typeof half === 'number' ? half : half(s);
     const l = p.pos.clone().addScaledVector(p.right, -h), r = p.pos.clone().addScaledVector(p.right, h);
     pos.push(l.x, l.y + yOff, l.z, r.x, r.y + yOff, r.z);

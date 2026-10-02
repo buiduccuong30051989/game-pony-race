@@ -1,5 +1,6 @@
-// Một người chạy trên đường (Nhím, người nhà, bạn được cứu): quãng đường s, tốc độ, làn (lệch ngang), nhánh rẽ, nhảy /
-// bay qua chướng ngại, tăng tốc cầu vồng / chậm vì bùn. Hình là 1 Pony đặt theo Track.pose mỗi khung.
+// Một người chạy trên đường (Nhím, người nhà, bạn được cứu): quãng đường s, tốc độ, làn (lệch ngang), nhảy / bay qua
+// (kỹ năng có sẵn: nháy ↑ 2 lần), tăng tốc cầu vồng. Đường `track` đổi được (rẽ sai → chạy vào nhánh cụt rồi quay ra).
+// Hình là 1 Pony đặt theo Track.pose mỗi khung.
 import * as THREE from 'three';
 import type { Pony } from './pony';
 import { Track, type Pose } from './track';
@@ -14,19 +15,16 @@ export class Runner {
   /** lệch ngang hiện tại / mục tiêu (m) */
   lat = 0;
   latGoal = 0;
-  /** nhánh rẽ: −1 trái, +1 phải, 0 = chưa chọn (đi giữa) */
-  side = 0;
   y = 0;
   private flyT = -1;
   boostT = 0;
-  mudT = 0;
   /** bay suốt (màn trời) */
   alwaysFly = false;
   /** đã qua vạch đích lúc (giây game) */
   finishedAt = -1;
   readonly pose: Pose = Track.newPose();
 
-  constructor(readonly pony: Pony, readonly track: Track) {}
+  constructor(readonly pony: Pony, public track: Track) {}
 
   get airborne(): boolean { return this.flyT >= 0; }
 
@@ -41,7 +39,6 @@ export class Runner {
   /** Tốc độ mục tiêu → tốc độ thật (tăng 9 m/s², giảm 12 m/s²), tiến s, cập nhật hình. */
   update(gdt: number, dt: number, want: number): void {
     if (this.boostT > 0) { this.boostT -= gdt; want *= 1.45; }
-    if (this.mudT > 0) { this.mudT -= gdt; want *= 0.6; }
     // đang bay qua chướng ngại: giữ đà (bé nhấc tay khỏi nút chạy để chạm nút cánh vẫn bay qua được)
     if (this.flyT >= 0 && want < this.v) want = this.v;
     const a = want > this.v ? 9 : 12;
@@ -55,9 +52,7 @@ export class Runner {
       if (k >= 1) { this.flyT = -1; this.y = 0; this.pony.flying = false; this.pony.land(); }
     }
     if (this.alwaysFly) this.pony.flying = true;
-    // về nhánh giữa khi đã qua ngã rẽ
-    if (this.side && !this.track.forkAt(this.s).fork) this.side = 0;
-    this.track.pose(this.s, this.lat, this.side, this.pose);
+    this.track.pose(this.s, this.lat, this.pose);
     this.pony.run = Math.min(1, this.v / 9);
     this.pony.place(this.pose.pos, this.pose.yaw, this.alwaysFly ? 0 : this.pose.pitch, this.y);
     this.pony.update(gdt, dt);

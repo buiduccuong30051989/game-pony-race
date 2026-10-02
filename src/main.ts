@@ -42,7 +42,10 @@ async function boot(): Promise<void> {
 
   // ---- màn bắt đầu
   ui.els.startBtn.classList.add('ready');
+  let started = false;
   const begin = async () => {
+    if (started) return;
+    started = true;
     unlockAudio();
     ui.els.start.classList.add('hide');
     setTimeout(() => (ui.els.start.hidden = true), 500);
@@ -70,8 +73,8 @@ async function boot(): Promise<void> {
     level = lv;
     phase = 'level';
     ui.showPlay(true);
-    ui.els.run.classList.remove('down');
     held = false;
+    ui.keyDown('up', false);
     await lv.setup();
     if (lv !== level) return;
     const outcome = await lv.run();
@@ -141,39 +144,47 @@ async function boot(): Promise<void> {
   });
   ui.els.repeat.addEventListener('click', (e) => { e.stopPropagation(); level?.repeat(); });
 
-  // ---- giữ để chạy: nút 🏇, giữ màn hình (chỗ không phải sao), phím Space / ↑
+  // ---- BÀN PHÍM (chơi chỉ bằng phím cho bé tập trung): giữ ↑ chạy, nháy ↑ 2 lần bay, ← → chọn đường, R nghe lại.
+  // Menu: Space / Enter = bắt đầu · chơi tiếp · thử lại; Esc = về bản đồ.
   let held = false;
   const setHeld = (on: boolean) => {
     if (held === on) return;
     held = on;
-    ui.els.run.classList.toggle('down', on);
+    ui.keyDown('up', on);
     level?.setHold(on);
   };
-  const canvas = engine.renderer.domElement;
-  const pointers = new Set<number>();
-  const press = (id: number) => { pointers.add(id); setHeld(true); };
-  const release = (id: number) => { pointers.delete(id); if (!pointers.size) setHeld(false); };
-  canvas.addEventListener('pointerdown', (e) => {
-    unlockAudio();
-    if (phase !== 'level' || !level) return;
-    if (level.tap(e.clientX, e.clientY)) return;
-    press(e.pointerId);
-  });
-  ui.els.run.addEventListener('pointerdown', (e) => { e.preventDefault(); unlockAudio(); press(e.pointerId); ui.els.run.setPointerCapture(e.pointerId); });
-  for (const t of [canvas, ui.els.run]) {
-    t.addEventListener('pointerup', (e) => release(e.pointerId));
-    t.addEventListener('pointercancel', (e) => release(e.pointerId));
-  }
-  ui.els.run.addEventListener('lostpointercapture', (e) => release(e.pointerId));
-  ui.els.fly.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); unlockAudio(); level?.pressFly(); });
+  let lastUp = 0;
+  const visible = (el: HTMLElement) => !el.hidden;
   window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown', ' '].includes(k)) e.preventDefault();
     if (e.repeat) return;
-    if (e.key === ' ' || e.key === 'ArrowUp') { press(-1); e.preventDefault(); }
-    if (e.key === 'f' || e.key === 'F' || e.key === 'ArrowDown') level?.pressFly();
+    unlockAudio();
+    if (k === ' ' || k === 'Enter') {
+      if (!started) { void begin(); return; }
+      if (visible(ui.els.result)) { (visible(ui.els.resNext) ? ui.els.resNext : visible(ui.els.resRetry) ? ui.els.resRetry : ui.els.resMap).click(); return; }
+      if (phase === 'map') { (document.querySelector<HTMLElement>('.lv-btn.next') ?? (ui.els.mapFinal.classList.contains('next') ? ui.els.mapFinal : null))?.click(); return; }
+    }
+    if (k === 'Escape') {
+      if (visible(ui.els.result)) { ui.els.resMap.click(); return; }
+      if (phase === 'level') { stopSpeech(); openMap(); }
+      return;
+    }
+    if (phase !== 'level' || !level) return;
+    if (k === 'ArrowUp') {
+      const now = performance.now();
+      if (now - lastUp < 380) level.pressFly();
+      lastUp = now;
+      setHeld(true);
+    } else if (k === 'ArrowLeft' || k === 'ArrowRight') {
+      const side = k === 'ArrowLeft' ? 'left' : 'right';
+      ui.keyDown(side, true);
+      setTimeout(() => ui.keyDown(side, false), 160);
+      if (level.steer(k === 'ArrowLeft' ? -1 : 1)) sfx('sfx_tap', 0.4);
+    } else if (k === 'r' || k === 'R') level.repeat();
   });
-  window.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'ArrowUp') release(-1); });
-  window.addEventListener('blur', () => { pointers.clear(); setHeld(false); });
-  // iPad: chạm giữ lâu không bật menu / kính lúp
+  window.addEventListener('keyup', (e) => { if (e.key === 'ArrowUp') setHeld(false); });
+  window.addEventListener('blur', () => setHeld(false));
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---- móc test / chụp màn hình

@@ -55,16 +55,17 @@
     #target span.off { opacity: .25; filter: grayscale(1); }
     #home { position: fixed; z-index: 6; top: var(--safe-t); right: var(--safe-r); width: 76px; height: 76px; font-size: 36px; }
 
-    /* nút chạy (giữ) + nút bay */
-    #run-btn { position: fixed; z-index: 5; right: calc(var(--safe-r) + 6px); bottom: calc(var(--safe-b) + 6px); width: 168px; height: 168px; font-size: 84px;
-      background: radial-gradient(circle at 40% 35%, #ffe0f0, var(--pink)); border-color: #b83b7d; }
-    #run-btn.down { background: radial-gradient(circle at 40% 35%, #fff, #ff86c2); }
-    #run-btn.hint { animation: pulse 1s ease-in-out infinite; }
-    #run-btn small { position: absolute; top: -38px; left: 0; right: 0; font-size: 22px; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #b83b7d; text-align: center; }
-    #fly-btn { position: fixed; z-index: 5; left: calc(var(--safe-l) + 6px); bottom: calc(var(--safe-b) + 6px); width: 150px; height: 150px; font-size: 76px;
-      background: radial-gradient(circle at 40% 35%, #fff, #bfe6ff); border-color: #1a7fbf; }
-    #fly-btn.hint { animation: pulse .7s ease-in-out infinite; box-shadow: 0 0 0 10px rgba(255,209,102,.8), 0 0 40px 14px rgba(255,209,102,.9); }
-    #fly-btn.cool { opacity: .5; }
+    /* bảng phím: ← (rẽ trái) · ↑ (giữ chạy, nháy 2 lần bay) · → (rẽ phải) — chơi bằng bàn phím */
+    #keys { position: fixed; z-index: 5; left: 50%; bottom: calc(var(--safe-b) + 6px); transform: translateX(-50%); display: flex; gap: 14px; align-items: flex-end; pointer-events: none; }
+    .key { display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .15s, opacity .2s; }
+    .key b { width: 78px; height: 78px; border-radius: 18px; border: 5px solid var(--ink); background: linear-gradient(180deg, #fff, #ece4ff); box-shadow: 0 6px 0 rgba(59,50,32,.25);
+      display: grid; place-items: center; font-size: 44px; line-height: 1; color: #6f3fa8; }
+    .key small { font-size: 18px; font-weight: 800; color: #6f3fa8; background: rgba(255,255,255,.92); border-radius: 999px; padding: 0 10px; white-space: nowrap; }
+    .key.up b { width: 96px; height: 96px; font-size: 54px; }
+    .key.down b { transform: translateY(4px); box-shadow: 0 2px 0 rgba(59,50,32,.25); background: linear-gradient(180deg, #ffe0f0, #ffb3d9); }
+    .key.dim { opacity: .45; }
+    .key.hint b { animation: pulse .7s ease-in-out infinite; border-color: var(--pink); box-shadow: 0 0 0 8px rgba(255,209,102,.8), 0 0 36px 12px rgba(255,209,102,.9); }
+    #keys.turn .key.up, #keys.fly .key.side, #keys.run .key.side { opacity: .35; }
 
     /* bảng câu hỏi */
     #panel { position: fixed; z-index: 7; top: calc(var(--safe-t) + 96px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px;
@@ -91,7 +92,7 @@
     @keyframes cd { 0% { transform: scale(2.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
 
     /* phụ đề */
-    #subtitle { position: fixed; z-index: 8; left: 50%; bottom: calc(var(--safe-b) + 14px); transform: translateX(-50%); width: min(760px, calc(100vw - 2 * 190px)); display: flex; gap: 12px; align-items: center;
+    #subtitle { position: fixed; z-index: 8; left: 50%; bottom: calc(var(--safe-b) + 150px); transform: translateX(-50%); width: min(760px, calc(100vw - 40px)); display: flex; gap: 12px; align-items: center;
       background: rgba(255,253,246,.96); border: 5px solid var(--sc, #a06cd5); border-radius: 26px; padding: 8px 18px 8px 10px; box-shadow: 0 6px 0 rgba(59,50,32,.18); pointer-events: none; }
     #subtitle.in { animation: subIn .3s ease both; }
     @keyframes subIn { from { transform: translateX(-50%) translateY(30px); opacity: 0; } }
@@ -181,8 +182,7 @@
       #me-badge { width: 64px; height: 64px; }
       .pill { font-size: 21px; padding: 2px 12px; }
       #hearts span { font-size: 24px; }
-      #run-btn { width: 140px; height: 140px; font-size: 70px; }
-      #fly-btn { width: 128px; height: 128px; font-size: 64px; }
+      .key b { width: 66px; height: 66px; font-size: 36px; } .key.up b { width: 80px; height: 80px; font-size: 44px; }
       #map-worlds { gap: 10px; }
       .w-card { padding: 10px 8px; }
       #panel { top: calc(var(--safe-t) + 80px); }
@@ -202,8 +202,11 @@
   </div>
   <button id="home" class="big" aria-label="Về bản đồ" hidden>🏠</button>
   <div id="panel" hidden><div id="panel-body"></div><button id="repeat" class="big" aria-label="Nghe lại">🔊</button></div>
-  <button id="run-btn" class="big" aria-label="Giữ để chạy" hidden>🏇<small>giữ để chạy</small></button>
-  <button id="fly-btn" class="big" aria-label="Bay" hidden>🪽</button>
+  <div id="keys" hidden>
+    <div class="key side" id="key-left"><b>⬅</b><small>rẽ trái</small></div>
+    <div class="key up" id="key-up"><b>⬆</b><small id="key-up-label">giữ: chạy · 2 lần: bay</small></div>
+    <div class="key side" id="key-right"><b>➡</b><small>rẽ phải</small></div>
+  </div>
   <div id="countdown" hidden></div>
   <div id="toast"></div>
   <div id="flash"></div>
@@ -243,7 +246,7 @@
     <div class="start-box">
       <h1>Nhím<br />phi nước đại</h1>
       <button id="start-btn" class="big" aria-label="Bắt đầu">🏇</button>
-      <p>Nhím ơi, chạm vào chú ngựa để bắt đầu</p>
+      <p>Nhím ơi, bấm phím cách (Space) hoặc chạm chú ngựa để bắt đầu</p>
     </div>
   </div>
   <div id="rotate" class="overlay"><div>📱</div>Nhím ơi, xoay ngang máy nhé!</div>

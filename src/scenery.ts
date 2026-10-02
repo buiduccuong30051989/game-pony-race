@@ -22,7 +22,7 @@ const RECOLOR: Record<SceneKind, Record<string, number>> = {
 };
 
 export interface Obstacle { s: number; h: number; group: THREE.Group; hit: boolean }
-interface Gem { s: number; lat: number; side: number; y: number; taken: boolean; pos: THREE.Vector3 }
+interface Gem { s: number; lat: number; y: number; taken: boolean; pos: THREE.Vector3 }
 interface Bird { s: number; r: number; h: number; phase: number; speed: number }
 interface Fly { s: number; lat: number; h: number; phase: number }
 
@@ -58,7 +58,8 @@ export class Scenery {
   /** ngọc vừa nhặt (Level đọc để phát âm + đếm) */
   onGem: ((p: THREE.Vector3) => void) | null = null;
 
-  constructor(private readonly engine: Engine, readonly track: Track, private readonly def: LevelDef) {
+  /** branches: nhánh cụt ở các ngã rẽ (rải cây tránh cả chúng) */
+  constructor(private readonly engine: Engine, readonly track: Track, private readonly def: LevelDef, private readonly branches: Track[] = []) {
     this.rnd = mulberry32(def.seed * 7919 + 3);
     engine.scene.add(this.group);
   }
@@ -75,7 +76,8 @@ export class Scenery {
       this.buildRoad();
       this.buildWater();
       await this.scatter();
-      if (!this.track.closed) { this.buildArch(10, false); this.buildArch(this.track.length - 14, true); }
+      await this.buildDeadEnds();
+      if (this.def.mode === 'race' || this.def.mode === 'chase') { this.buildArch(10, false); this.buildArch(this.track.length - 14, true); }
     }
     this.buildClouds();
     this.buildBirds();
@@ -144,43 +146,66 @@ export class Scenery {
     const tr = this.track;
     const road = this.roadMaterial();
     const rain = this.rainbowMaterial();
-    const half = tr.width / 2, bh = tr.branchWidth / 2;
-    // mốc cắt: mỗi CHUNK m + đầu/cuối cầu + đoạn giữa ngã rẽ (2 nhánh tách hẳn → bỏ mặt đường chính)
+    const half = tr.width / 2;
+    // mặt đường chính cắt mỗi CHUNK m (loại theo tầm nhìn) + đầu / cuối cầu (đổi sang vật liệu cầu vồng)
     const cuts = new Set<number>([0, tr.length]);
     for (let s = CHUNK; s < tr.length; s += CHUNK) cuts.add(s);
     for (const b of tr.bridges) { cuts.add(b.s0); cuts.add(b.s1); }
-    // ngã rẽ: đoạn tách / nhập dùng mặt đường chính NỞ RỘNG phủ cả 2 nhánh (hình chữ Y), đoạn giữa là 2 nhánh riêng
-    const gaps: [number, number][] = tr.forks.map((f) => {
-      const L = f.s1 - f.s0;
-      return [f.s0 + L * 0.2, f.s1 - L * 0.17];
-    });
-    for (const [a, b] of gaps) { cuts.add(a); cuts.add(b); }
-    const halfAt = (s: number) => {
-      const { fork, off } = tr.forkAt(s);
-      return fork ? Math.max(half, off + bh) : half;
-    };
     const sorted = [...cuts].sort((a, b) => a - b);
     for (let k = 0; k < sorted.length - 1; k++) {
       const s0 = sorted[k], s1 = sorted[k + 1], mid = (s0 + s1) / 2;
-      if (gaps.some(([a, b]) => mid > a && mid < b)) continue;
       const bridge = tr.onBridge(mid);
-      const geo = ribbon(tr, s0, s1, halfAt, () => 0, 0.03, bridge ? 0.02 : 1 / 6);
+      const geo = ribbon(tr, s0, s1, half, () => 0, 0.03, bridge ? 0.02 : 1 / 6);
       const m = new THREE.Mesh(geo, bridge ? rain : road);
       m.receiveShadow = true;
       this.group.add(m);
       this.disposables.push(geo);
       if (bridge) this.bridgeRails(s0, s1, half);
     }
-    // 2 nhánh ở đoạn giữa ngã rẽ (chồng 1 m lên mặt chính 2 đầu, cao hơn 6 mm để không nhấp nháy)
-    for (let i = 0; i < tr.forks.length; i++) {
-      const [a, b] = gaps[i];
-      for (const side of [-1, 1]) {
-        const geo = ribbon(tr, a - 1, b + 1, bh, (s) => side * tr.forkAt(s).off, 0.036);
-        const m = new THREE.Mesh(geo, road);
-        m.receiveShadow = true;
-        this.group.add(m);
-        this.disposables.push(geo);
+    // nhánh cụt ở mỗi ngã rẽ (cao hơn mặt chính 6 mm để chỗ chồng không nhấp nháy) + đống đá chắn cuối nhánh
+    for (const br of this.branches) {
+      const geo = ribbon(br, 0, br.length, br.width / 2, () => 0, 0.036);
+      const m = new THREE.Mesh(geo, road);
+      m.receiveShadow = true;
+      this.group.add(m);
+      this.disposables.push(geo);
+    }
+  }
+
+  /** Đống đá + khúc gỗ chắn cuối mỗi nhánh cụt. */
+  private async buildDeadEnds(): Promise<void> {
+    if (!this.branches.length) return;
+    const rock = await this.loadProp('rock_largeA.glb');
+    const log = await this.loadProp('log_large.glb');
+    const g = new THREE.Group();
+    for (const br of this.branches) {
+      br.pose(br.length - 1, 0, this.pose);
+      const end = new THREE.Group();
+      for (const [lat, sc] of [[-2.2, 2.6], [0, 3.2], [2.2, 2.4]] as const) {
+        const r = rock.clone();
+        r.scale.setScalar(sc);
+        r.position.set(lat, 0, 0.6);
+        r.rotation.y = this.rnd() * 6.28;
+        end.add(r);
       }
+      const l = log.clone();
+      l.scale.setScalar(2.2);
+      l.rotation.y = Math.PI / 2;
+      l.position.set(0, 0, -0.8);
+      end.add(l);
+      end.position.copy(this.pose.pos);
+      end.rotation.y = this.pose.yaw;
+      g.add(end);
+    }
+    this.mergeStatic(g);
+    this.group.add(g);
+    // biển 🚧 to trên đống đá: bé nhìn là biết đường cụt
+    for (const br of this.branches) {
+      br.pose(br.length - 1, 0, this.pose);
+      const sp = this.engine.emojiSprite('🚧', 2.2);
+      sp.position.copy(this.pose.pos).add(new THREE.Vector3(0, 3.6, 0));
+      this.group.add(sp);
+      this.disposables.push(sp.material);
     }
   }
 
@@ -190,7 +215,7 @@ export class Scenery {
     const ball = new THREE.IcosahedronGeometry(0.42, 1);
     for (let s = s0 + 1; s < s1; s += 2.2) {
       for (const side of [-1, 1]) {
-        this.track.pose(s, side * (half + 0.15), 0, this.pose);
+        this.track.pose(s, side * (half + 0.15), this.pose);
         const g = ball.clone();
         g.scale(1, 0.8, 1);
         g.translate(this.pose.pos.x, this.pose.pos.y + 0.25, this.pose.pos.z);
@@ -219,7 +244,7 @@ export class Scenery {
       this.waterTex.push(tex);
       const mat = new THREE.MeshLambertMaterial({ map: tex });
       const mid = (b.s0 + b.s1) / 2;
-      this.track.pose(mid, 0, 0, this.pose);
+      this.track.pose(mid, 0, this.pose);
       const w = (b.s1 - b.s0) * 0.42;
       const geo = new THREE.PlaneGeometry(w, 160);
       const m = new THREE.Mesh(geo, mat);
@@ -272,13 +297,12 @@ export class Scenery {
     };
     const tr = this.track;
     const place = (s: number, dist: number, side: number, far: boolean) => {
-      tr.pose(s, side * (tr.width / 2 + dist), 0, this.pose);
+      tr.pose(s, side * (tr.width / 2 + dist), this.pose);
       const x = this.pose.pos.x, z = this.pose.pos.z;
       const [name, , smin, smax] = pickProp();
       const big = name === 'house' || name === 'tower';
-      const clear = tr.roadClearance(x, z);
+      const clear = Math.min(tr.roadClearance(x, z), ...this.branches.map((b) => b.roadClearance(x, z)));
       if (clear < (big ? 4.5 : 1.2)) return;
-      if (tr.forks.some((f) => s > f.s0 - 2 && s < f.s1 + 2) && dist < 4 && !far) return;
       let obj: THREE.Object3D;
       if (name.endsWith('.glb')) {
         obj = protos.get(name)!.clone();
@@ -294,20 +318,6 @@ export class Scenery {
       for (const side of [-1, 1]) {
         if (this.rnd() < 0.82) place(s + this.rnd() * step, 0.8 + this.rnd() * 9, side, false);
         if (this.rnd() < 0.55) place(s + this.rnd() * step, 11 + this.rnd() * 30, side, true);
-      }
-    }
-    // đảo giữa 2 nhánh rẽ: hoa + bụi nhỏ
-    for (const f of tr.forks) {
-      for (let s = f.s0 + (f.s1 - f.s0) * 0.32; s < f.s1 - (f.s1 - f.s0) * 0.28; s += 2.4) {
-        const name = this.kind === 'castle' ? 'flower_redA.glb' : this.kind === 'hills' ? 'flower_purpleB.glb' : 'flower_yellowA.glb';
-        const proto = protos.get(name) ?? await this.loadProp(name);
-        protos.set(name, proto);
-        const o = proto.clone();
-        tr.pose(s, (this.rnd() - 0.5) * 1.6, 0, this.pose);
-        o.position.set(this.pose.pos.x, 0, this.pose.pos.z);
-        o.scale.setScalar(2 + this.rnd());
-        o.rotation.y = this.rnd() * 6.28;
-        chunkOf(s).add(o);
       }
     }
     for (const g of chunks.values()) {
@@ -435,7 +445,7 @@ export class Scenery {
   /** Cổng xuất phát / đích: 2 cột + băng rôn ca-rô (đích có cờ cầu vồng). */
   private buildArch(s: number, finish: boolean): void {
     const tr = this.track;
-    tr.pose(s, 0, 0, this.pose);
+    tr.pose(s, 0, this.pose);
     const g = new THREE.Group();
     const half = tr.width / 2 + 0.6;
     const postMat = new THREE.MeshLambertMaterial({ color: finish ? 0xffd166 : 0xffffff });
@@ -519,7 +529,7 @@ export class Scenery {
     warn.rotation.x = -Math.PI / 2; warn.position.set(0, 0.06, -2.2);
     g.add(warn);
     g.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.castShadow = false; });
-    tr.pose(s, 0, 0, this.pose);
+    tr.pose(s, 0, this.pose);
     g.position.copy(this.pose.pos);
     g.rotation.y = this.pose.yaw;
     this.group.add(g);
@@ -538,11 +548,11 @@ export class Scenery {
 
   // ------------------------------------------------------------------ ngọc
 
-  /** Thêm hàng ngọc: n viên từ quãng s, cách nhau gap m, lệch lat, cao y (cầu vồng ngọc qua chướng ngại: arc). */
-  addGems(s: number, n: number, gap: number, lat: number, side: number, arc = 0): void {
+  /** Thêm hàng ngọc: n viên từ quãng s, cách nhau gap m, lệch lat (vòm ngọc qua chướng ngại: arc = độ cao vòm). */
+  addGems(s: number, n: number, gap: number, lat: number, arc = 0): void {
     for (let i = 0; i < n; i++) {
       const y = 1.0 + (arc ? Math.sin((i / Math.max(1, n - 1)) * Math.PI) * arc : 0);
-      this.gems.push({ s: s + i * gap, lat, side, y, taken: false, pos: new THREE.Vector3() });
+      this.gems.push({ s: s + i * gap, lat, y, taken: false, pos: new THREE.Vector3() });
     }
   }
 
@@ -554,7 +564,7 @@ export class Scenery {
     this.gemMesh = new THREE.InstancedMesh(geo, mat, this.gems.length);
     const colors = [0x7fe3ff, 0xff8fd0, 0xffe066, 0xb28cff, 0x8ff0a4];
     this.gems.forEach((g, i) => {
-      this.track.pose(g.s, g.lat, g.side, this.pose);
+      this.track.pose(g.s, g.lat, this.pose);
       g.pos.copy(this.pose.pos); g.pos.y += g.y;
       this.gemMesh!.setColorAt(i, new THREE.Color(colors[i % colors.length]));
     });
@@ -598,7 +608,7 @@ export class Scenery {
         // mây quanh đường bay nhưng không che: cách ngang ≥ 15 m, cao / thấp hơn đường bay
         const s = r() * this.track.length;
         const side = r() < 0.5 ? -1 : 1;
-        this.track.pose(s, side * (15 + r() * 45), 0, this.pose);
+        this.track.pose(s, side * (15 + r() * 45), this.pose);
         x = this.pose.pos.x; z = this.pose.pos.z; y = this.pose.pos.y + (r() < 0.65 ? -5 - r() * 14 : 7 + r() * 10);
       } else {
         const a = r() * Math.PI * 2, d = span * (0.5 + r() * 0.6);
@@ -675,30 +685,14 @@ export class Scenery {
     // cầu vồng lớn quanh đường bay
     for (let i = 0; i < 4; i++) {
       const s = (i + 0.3) * this.track.length / 4;
-      this.track.pose(s, (i % 2 ? -1 : 1) * 30, 0, this.pose);
+      this.track.pose(s, (i % 2 ? -1 : 1) * 30, this.pose);
       const rb = this.rainbowArc(26 + i * 4);
       rb.position.set(this.pose.pos.x, this.track.baseY - 30, this.pose.pos.z);
       rb.rotation.y = this.pose.yaw + Math.PI / 2;
       this.group.add(rb);
     }
-    // vòng mây trên đường bay (bay qua có ngọc)
-    const ringGeo = new THREE.TorusGeometry(3.4, 0.55, 8, 28);
-    const ringMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffe6ff, emissiveIntensity: 0.4 });
-    const count = Math.floor(this.track.length / 45);
-    const rings = new THREE.InstancedMesh(ringGeo, ringMat, count);
-    for (let i = 0; i < count; i++) {
-      const s = 20 + i * 45;
-      this.track.pose(s, 0, 0, this.pose);
-      this.tmp.position.copy(this.pose.pos).add(new THREE.Vector3(0, 1.4, 0));
-      this.tmp.rotation.set(0, this.pose.yaw, 0);
-      this.tmp.scale.setScalar(1);
-      this.tmp.updateMatrix();
-      rings.setMatrixAt(i, this.tmp.matrix);
-      this.addGems(s - 2, 5, 1, 0, 0, 0.6);
-    }
-    rings.computeBoundingSphere();
-    this.group.add(rings);
-    this.disposables.push(ringGeo, ringMat);
+    // hàng ngọc trên đường bay (không đặt vòng mây trang trí: dễ lẫn với 2 vòng mây đáp án)
+    for (let s = 20; s < this.track.length; s += 45) this.addGems(s - 2, 5, 1, 0, 0.6);
     // sao đêm (Nữ hoàng Bóng Đêm) — tắt dần khi bình minh
     const n = 400, pos = new Float32Array(n * 3), r = mulberry32(8);
     for (let i = 0; i < n; i++) {
@@ -768,7 +762,7 @@ export class Scenery {
         if (d > 220) b.s -= 200;
         d = b.s - playerS;
         const a = t * b.speed + b.phase;
-        this.track.pose(((b.s % L) + L) % L, Math.sin(a) * b.r, 0, this.pose);
+        this.track.pose(((b.s % L) + L) % L, Math.sin(a) * b.r, this.pose);
         const p = this.pose.pos;
         this.tmp.position.set(p.x, p.y + b.h + Math.sin(a * 2) * 1.2, p.z);
         this.tmp.rotation.set(0, this.pose.yaw + Math.cos(a) * 0.9, 0);
@@ -793,7 +787,7 @@ export class Scenery {
         if (d < -12) f.s += 90 + this.rnd() * 50;
         if (d > 160) f.s -= 150;
         const a = t * 1.4 + f.phase;
-        this.track.pose(f.s + Math.sin(a) * 1.5, f.lat + Math.cos(a * 0.8) * 0.8, 0, this.pose);
+        this.track.pose(f.s + Math.sin(a) * 1.5, f.lat + Math.cos(a * 0.8) * 0.8, this.pose);
         this.tmp.position.set(this.pose.pos.x, this.pose.pos.y + f.h + Math.sin(a * 2.3) * 0.35, this.pose.pos.z);
         this.tmp.quaternion.copy(q);
         const flap = 0.35 + 0.65 * Math.abs(Math.sin(t * 13 + f.phase));

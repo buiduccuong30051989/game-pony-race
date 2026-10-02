@@ -1,27 +1,28 @@
 // Một bài chơi: dựng đường + cảnh, Nhím và (tuỳ bài) người nhà đua cùng / quái đuổi / quái chạy trước / Nữ hoàng Bóng Đêm.
+// CHƠI BẰNG BÀN PHÍM (cho bé tập trung): giữ ↑ = chạy, nháy ↑ 2 lần = bay / nhảy xa (lúc nào cũng được), ← → = chọn đường.
 //
-//  - Giữ nút thì chạy (thả ra thì chậm dần rồi đứng, không bị phạt). Gặp chướng ngại: mọi thứ CHẬM LẠI, nút cánh sáng lên,
-//    chạm để bay qua; không chạm thì vấp lộn 1 vòng (không tính là sai).
-//  - Câu hỏi: thời gian gần như DỪNG (không đếm giờ), 3 ngôi sao đáp án trước mặt (ngã rẽ: 2 biển trên 2 nhánh).
-//    Mỗi câu 1 kết quả: đúng → né phép / bắn trúng / đường tắt cầu vồng; sai → mất 1 tim, đọc đáp án đúng để bé học,
-//    câu đó được ghi để ôn lại ở bài sau. Hết 3 tim là thua (chơi lại bài đó).
+//  - Chướng ngại: sắp tới thì mọi thứ chậm lại và Nhím DỪNG trước chướng ngại, chờ bé nháy ↑ 2 lần để bay qua.
+//  - Mỗi câu hỏi là 1 NGÃ RẼ 2 đường, biển đáp án ở đầu mỗi đường. Thời gian gần như dừng (không đếm giờ) tới khi bé bấm ← / →.
+//    Đúng: đi tiếp đường chính (đường tắt cầu vồng / thoát quái / bắn trúng quái). Sai: mất 1 tim, chạy vào đường cụt (đá chắn
+//    hoặc quái), người nhà gọi "Nhím ơi, quay lại!", nghe đáp án đúng, rồi tự quay ra đi đường đúng. Ghép tiếng: mỗi bước
+//    (chữ đầu, nguyên âm, dấu) là 1 ngã rẽ. Màn cuối trên trời: 2 vòng mây trái / phải thay cho ngã rẽ.
+//  - Câu sai được ghi để ôn lại ở bài sau. Hết 3 tim là thua (chơi lại bài đó).
 import * as THREE from 'three';
 import type { Engine } from './engine';
-import { Track, type Fork, type Span, mulberry32 } from './track';
+import { Track, JOG_LEN, BRANCH_LEN, type Span, type Turn, mulberry32 } from './track';
 import { Scenery, type Obstacle } from './scenery';
 import { Pony } from './pony';
 import { Runner } from './runner';
 import { Monster } from './monster';
 import { LetterStar, glowTexture, type ToneName } from './letterstar';
-import { CAST, HEARTS, RACERS_BASE, type CastId, type FamilyId, type FriendId, type LevelDef } from './data';
+import { CAST, HEARTS, RACERS_BASE, type CastId, type FamilyId, type FriendId, type LevelDef, type MonsterKind } from './data';
 import { makeQuiz, type Question, type Step } from './quiz';
 import { markRight, markWrong, cosmetics, type Progress } from './progress';
 import { play, sfx, speakSequence, stopSpeech } from './audio';
 import { say, narrate } from './talk';
 import { bankLine } from './voice';
-import { FAMILY_LINES, familyKey, thanksKey } from './lines';
+import { FAMILY_LINES, familyKey, thanksKey, toneLabelKey } from './lines';
 import { nameKey } from './letters';
-import { numKey } from './numbers';
 import { tween, wait, easeInOutSine } from './tween';
 import { setAnswer } from './testhook';
 import * as ui from './ui';
@@ -30,29 +31,39 @@ export type Outcome = 'win' | 'lose' | 'quit';
 export interface LevelResult { outcome: Outcome; gems: number; place?: number; winner?: CastId; friends: FriendId[]; racers: CastId[] }
 
 const LANE = 2.5;
-const FORK_LEN = 40;
 const BRIDGE_LEN = 36;
+/** đoạn thẳng trước ngã rẽ (vùng hỏi) và sau ngã rẽ (có 1 chướng ngại) */
+const APPROACH = 24;
+const AFTER = 36;
+/** màn cuối: khoảng cách giữa 2 cặp vòng mây */
+const GATE_GAP = 58;
+/** quái đứng chờ ở cuối nhánh cụt (theo thế giới) */
+const DEAD_END_MONSTER: Record<number, MonsterKind> = { 1: 'slime_jt', 2: 'goblin', 3: 'ghost', 4: 'wizard' };
 
+/** 1 lượt chọn đường: câu hỏi + bước (ghép tiếng có 2–3 bước, mỗi bước 1 ngã rẽ). */
+interface Slot { q: Question; si: number; first: boolean; last: boolean }
+interface Junction {
+  turn: Turn; branch: Track; back: Track; slot: Slot;
+  /** quái chờ ở cuối nhánh cụt (null = đống đá) */
+  mon: Monster | null;
+  signs: LetterStar[];
+  asked: boolean;
+  /** đường bé chọn: −1 trái, +1 phải, 0 = chưa chọn */
+  choice: number;
+  /** đang đi nhầm: vào nhánh / quay ra */
+  trip: 'go' | 'end' | 'back' | null;
+  wave?: boolean;
+}
+interface Gate { s: number; slot: Slot; signs: LetterStar[]; rings: THREE.Mesh[]; choice: number; mainDir: number; passed: boolean }
 interface Chaser { m: Monster; s: number; gap: number; lat: number; extra: boolean }
 interface Target { m: Monster; s: number; hp: number; friendId: FriendId; friend: Pony | null; bubble: THREE.Mesh | null; boostT: number; gap: number }
-interface Ev { s: number; kind: 'fork' | 'attack'; fork?: Fork; done: boolean; answered?: boolean; wave?: boolean }
-interface Orb { sprite: THREE.Sprite; from: THREE.Vector3; u: number; cap: number; miss: THREE.Vector3 | null; hitPlayer: boolean; color: number; done: () => void }
+interface Orb { sprite: THREE.Sprite; from: THREE.Vector3; u: number; cap: number; miss: THREE.Vector3 | null; hitPlayer: boolean; color: number }
 
 /** Cặp người nhà đua lần trước (không lặp lại liền). */
 let lastPair = '';
 
-/** Rải `count` điểm đều trong vùng trống [from, to], tránh các khoảng `busy` (± margin). */
-function spread(count: number, from: number, to: number, busy: Span[], margin: number): number[] {
-  const free: number[] = [];
-  for (let s = from; s <= to; s++) if (!busy.some((b) => s > b.s0 - margin && s < b.s1 + margin)) free.push(s);
-  if (!free.length || !count) return [];
-  const out: number[] = [];
-  for (let i = 0; i < count; i++) {
-    const s = free[Math.floor(((i + 0.5) / count) * free.length)];
-    if (!out.length || s - out[out.length - 1] > 14) out.push(s);
-  }
-  return out;
-}
+/** Bên của đường đúng: biển trái là lựa chọn 0, biển phải là lựa chọn 1. */
+const mainDirOf = (step: Step): -1 | 1 => (step.choices[0] === step.answer ? -1 : 1);
 
 export class Level {
   track!: Track;
@@ -61,32 +72,30 @@ export class Level {
   readonly racers: Runner[] = [];
   private racerBias: number[] = [];
   private readonly chasers: Chaser[] = [];
-  private targets: { kind: Monster['kind']; friend: FriendId }[] = [];
+  private targets: { kind: MonsterKind; friend: FriendId }[] = [];
   private target: Target | null = null;
   private nmm: Pony | null = null;
   private nmmHits = 0;
-  private turn: 'me' | 'nmm' = 'me';
-  private lastTurnS = 0;
+  private turnWho: 'me' | 'nmm' = 'me';
   private readonly helpers: Runner[] = [];
   hearts = HEARTS;
   gems = 0;
   private wrong = 0;
-  private qs: Question[] = [];
-  private qi = 0;
-  private events: Ev[] = [];
+  private slots: Slot[] = [];
+  private slotI = 0;
+  private junctions: Junction[] = [];
+  private gate: Gate | null = null;
+  private lastGateS = 0;
   private rnd: () => number;
-  /** bé đang giữ nút chạy */
+  /** bé đang giữ ↑ */
   holding = false;
   busy = false;
-  /** đang diễn cảnh (cứu bạn): Nhím đứng lại xem, không tự chạy */
+  /** đang diễn cảnh (cứu bạn, đi nhầm đường): Nhím tự chạy / đứng xem */
   private cutscene = false;
   started = false;
   private over = false;
   private alive = true;
-  /** sao / biển đáp án đang hiện */
-  private choices: LetterStar[] = [];
-  private posts: THREE.Mesh[] = [];
-  private pickResolve: ((s: LetterStar | null) => void) | null = null;
+  private pickResolve: ((dir: number) => void) | null = null;
   private currentAsk: string | null = null;
   private askAt = 0;
   private askRepeats = 0;
@@ -100,7 +109,8 @@ export class Level {
   private camYaw = 0;
   private readonly camLook = new THREE.Vector3();
   private camMode: 'follow' | 'front' = 'follow';
-  private shownTapHint = false;
+  private taughtTurn = false;
+  private taughtFly = false;
   private friendsSaved: FriendId[] = [];
   private finishPlace = 0;
   private winner: CastId | undefined;
@@ -109,98 +119,92 @@ export class Level {
   private cosmetic = new Set<string>();
   private crown: THREE.Group | null = null;
   private night = 0;
+  private waveAnswers: boolean[] = [];
+  private qWrong = new Set<string>();
+  loseFace: FamilyId | null = null;
   private readonly tmpV = new THREE.Vector3();
+  private readonly tmpPose = Track.newPose();
 
-  /** auto: máy tự giữ nút chạy + tự bay (test); autoAnswer: máy tự chọn đáp án đúng. */
+  /** auto: máy tự giữ ↑ + tự bay (test); autoAnswer: máy tự chọn đường đúng. */
   constructor(private readonly engine: Engine, readonly def: LevelDef, private readonly progress: Progress, private readonly auto = false, private readonly autoAnswer = false) {
     this.rnd = mulberry32(def.seed * 31 + Math.floor(Math.random() * 1e6));
     this.ended = new Promise((r) => { this.resolveEnd = r; });
   }
 
   get mode(): LevelDef['mode'] { return this.def.mode; }
-  get waitingLabel(): string | null { return this.pickResolve ? this.currentAsk : null; }
+
+  /** Quãng đường "trên đường chính" của Nhím (đang đi nhầm vào nhánh cụt thì tính như đứng ở ngã rẽ). */
+  private get mainS(): number {
+    const j = this.junctions.find((x) => x.trip);
+    return j ? j.turn.s : this.player.s;
+  }
 
   // ================================================================== dựng bài
 
   async setup(): Promise<void> {
     const d = this.def;
-    const closed = d.mode === 'hunt' || d.mode === 'final';
-    const L = d.length;
-    const forks: Span[] = [], bridges: Span[] = [];
-    if (d.mode === 'race') {
-      // cầu đầu (nếu có 2), các ngã rẽ cách đều, cầu cuối, rồi về đích
-      let s = 30;
-      if (d.bridges >= 2) { bridges.push({ s0: s, s1: s + BRIDGE_LEN }); s += BRIDGE_LEN + 14; }
-      s = Math.max(s, 72);
-      const room = L - 30 - (d.bridges >= 1 ? BRIDGE_LEN + 30 : 0) - s;
-      // mỗi khối: hỏi (18 m trước ngã rẽ) → ngã rẽ → 1 chướng ngại giữa 2 ngã rẽ
-      const gap = Math.max(FORK_LEN + 52, room / d.questions);
-      for (let i = 0; i < d.questions; i++) forks.push({ s0: s + i * gap, s1: s + i * gap + FORK_LEN });
-      const last = forks[forks.length - 1].s1 + 14;
-      if (d.bridges >= 1) bridges.push({ s0: last, s1: last + BRIDGE_LEN });
-    } else if (d.mode === 'chase') {
-      const n = d.bridges;
-      for (let i = 0; i < n; i++) { const s0 = Math.round(L * (0.3 + i * 0.36)); bridges.push({ s0, s1: s0 + BRIDGE_LEN }); }
-    } else if (d.mode === 'hunt') {
-      for (let i = 0; i < d.bridges; i++) { const s0 = Math.round(L * (0.25 + i * 0.4)); bridges.push({ s0, s1: s0 + BRIDGE_LEN }); }
-    }
-    this.track = new Track({ closed, length: L, seed: d.seed, width: 7.2, bridges, forks, baseY: d.mode === 'final' ? 40 : 0, wave: d.mode === 'final' ? 5 : 0 });
-    this.scenery = new Scenery(this.engine, this.track, d);
-    for (const f of this.track.forks) this.events.push({ s: f.s0 - 18, kind: 'fork', fork: f, done: false });
+    // câu hỏi trước (hướng mỗi ngã rẽ phụ thuộc đáp án nằm ở biển trái hay phải)
+    const qCount = d.mode === 'hunt' ? 10 : d.mode === 'final' ? 16 : d.questions;
+    const qs = makeQuiz(d.quiz, qCount, 2, this.progress.weak, this.rnd);
+    const slots: Slot[] = [];
+    for (const q of qs) q.steps.forEach((_, si) => slots.push({ q, si, first: si === 0, last: si === q.steps.length - 1 }));
+    // đuổi quái: đủ ngã rẽ cho 6 phát trúng + 2 lần sai (sai 3 là thua)
+    this.slots = d.mode === 'hunt' ? slots.slice(0, Math.max(8, slots.findIndex((s, i) => i >= 7 && s.last) + 1)) : slots;
 
-    // câu hỏi
-    const n = d.mode === 'race' ? 2 : 3;
-    const count = d.mode === 'race' ? d.questions : d.mode === 'chase' ? d.questions : 16;
-    this.qs = makeQuiz(d.quiz, count, n, this.progress.weak, this.rnd);
-
-    if (d.mode === 'chase') {
-      const busy: Span[] = [...bridges];
-      const at = spread(d.questions - 1, 80, L - 70, busy, 14);
-      const waveI = Math.min(at.length - 1, Math.floor(at.length * 0.6));
-      at.forEach((s, i) => {
-        this.events.push({ s, kind: 'attack', done: false, wave: i === waveI });
-        if (i === waveI) this.events.push({ s: s + 26, kind: 'attack', done: false });
-      });
-    }
-    this.events.sort((a, b) => a.s - b.s);
-
-    // chướng ngại: chỗ trống, tránh cầu, ngã rẽ, chỗ quái bắn
-    if (d.obstacles) {
-      const busy: Span[] = [...bridges, ...this.track.forks.map((f) => ({ s0: f.s0 - 22, s1: f.s1 + 4 })), ...this.events.filter((e) => e.kind === 'attack').map((e) => ({ s0: e.s - 8, s1: e.s + 16 }))];
-      const end = closed ? L - 20 : L - 40;
-      let spots = spread(d.obstacles, closed ? 60 : 44, end, busy, 10);
-      if (d.mode === 'race') {
-        // đua: 1 chướng ngại giữa mỗi 2 ngã rẽ (sau ngã rẽ, trước vùng hỏi của ngã rẽ sau), 1 trước ngã rẽ đầu, 1 sau cầu cuối
-        const fk = this.track.forks;
-        spots = fk.slice(0, -1).map((f, i) => Math.round((f.s1 + fk[i + 1].s0 - 18) / 2));
-        if (!bridges.some((b) => b.s0 < 70)) spots.unshift(46);
-        const lastB = bridges[bridges.length - 1];
-        if (lastB && lastB.s1 + 16 < L - 30) spots.push(lastB.s1 + 16);
-      }
-      for (const s of spots) {
-        await this.scenery.addObstacle(s);
-        // vòm ngọc bay qua chướng ngại
-        this.scenery.addGems(s - 3.5, 6, 1.4, 0, 0, 2.2);
-      }
-    }
-    // hàng ngọc giữa đường (làn của Nhím)
+    const bridges: Span[] = [];
+    const turns: Turn[] = [];
+    const obstacleAt: number[] = [];
+    let L = d.length;
     if (d.mode !== 'final') {
-      for (let s = 38; s < L - 30; s += 32) {
-        if (bridges.some((b) => s > b.s0 - 4 && s < b.s1) || this.track.forks.some((f) => s > f.s0 - 4 && s < f.s1 + 2)) continue;
-        if (this.scenery.obstacles.some((o) => Math.abs(o.s - s) < 8)) continue;
-        this.scenery.addGems(s, 5, 1.6, 0, 0);
-      }
-      for (const f of this.track.forks) for (const side of [-1, 1]) this.scenery.addGems(f.s0 + 14, 6, 2.2, 0, side);
+      let s = 0;
+      if (d.bridges >= 2) { bridges.push({ s0: 26, s1: 26 + BRIDGE_LEN }); s = 26 + BRIDGE_LEN + 14; }
+      else { obstacleAt.push(36); s = 52; }
+      this.slots.forEach((sl, i) => {
+        const t: Turn = { s: s + APPROACH, dir: mainDirOf(sl.q.steps[sl.si]) };
+        turns.push(t);
+        s = t.s + JOG_LEN;
+        if (i < this.slots.length - 1 && sl.last) obstacleAt.push(s + 15);
+        s += sl.last ? AFTER : 16;
+      });
+      if (d.bridges >= 1) { bridges.push({ s0: s + 4, s1: s + 4 + BRIDGE_LEN }); s += BRIDGE_LEN + 16; }
+      L = Math.round(s + 34);
+    }
+    this.track = new Track({ closed: d.mode === 'final', length: L, seed: d.seed, width: 7.2, bridges, turns,
+      baseY: d.mode === 'final' ? 40 : 0, wave: d.mode === 'final' ? 5 : 0 });
+    // nhánh cụt mỗi ngã rẽ (đi vào + đi ra)
+    this.junctions = this.track.turns.map((t, i) => ({
+      turn: t, branch: Track.branch(this.track, t, BRANCH_LEN), back: Track.branch(this.track, t, BRANCH_LEN, true),
+      slot: this.slots[i], mon: null, signs: [], asked: false, choice: 0, trip: null,
+      wave: d.mode === 'chase' && i === Math.floor(this.slots.length * 0.6),
+    }));
+    this.scenery = new Scenery(this.engine, this.track, d, this.junctions.map((j) => j.branch));
+    for (const s of obstacleAt) await this.scenery.addObstacle(s);
+    for (const s of obstacleAt) this.scenery.addGems(s - 3.5, 6, 1.4, 0, 2.2);
+    // hàng ngọc giữa đường
+    if (d.mode !== 'final') {
+      for (const j of this.junctions) this.scenery.addGems(j.turn.s + JOG_LEN + 4, 5, 1.6, 0);
+      this.scenery.addGems(14, 5, 1.6, 0);
     }
     this.scenery.onGem = () => { this.gems++; ui.setGems(this.gems, true); sfx('sfx_gem', 0.35); };
     await this.scenery.build();
     if (!this.alive) return;
+    // nửa số nhánh cụt có quái chờ (cười khi bé chạy nhầm vào), còn lại là đống đá
+    const monKind = DEAD_END_MONSTER[d.world] ?? 'slime_jt';
+    for (const j of this.junctions) {
+      if (this.rnd() < 0.5) continue;
+      const m = await Monster.create(this.engine, monKind);
+      if (!this.alive) { m.dispose(); return; }
+      j.branch.pose(j.branch.length - 4.5, 0, this.tmpPose);
+      m.place(this.tmpPose.pos, this.tmpPose.yaw + Math.PI);
+      this.engine.scene.add(m.root);
+      j.mon = m;
+    }
 
     // Nhím
     const tw = await Pony.load(this.engine, 'twilight', 'real');
     this.engine.scene.add(tw.root);
     this.player = new Runner(tw, this.track);
-    this.player.s = closed ? 0 : 4;
+    this.player.s = d.mode === 'final' ? 0 : 4;
     this.player.alwaysFly = d.mode === 'final';
     this.prevS = this.player.s;
     this.cosmetic = cosmetics(this.progress);
@@ -225,8 +229,7 @@ export class Level {
     const fam: FamilyId[] = [...RACERS_BASE, ...(this.progress.done.includes('final') ? ['bac-hanh' as FamilyId] : [])];
     let pair: FamilyId[];
     do {
-      const a = [...fam].sort(() => this.rnd() - 0.5);
-      pair = a.slice(0, 2);
+      pair = [...fam].sort(() => this.rnd() - 0.5).slice(0, 2);
     } while (pair.slice().sort().join() === lastPair && fam.length > 2);
     lastPair = pair.slice().sort().join();
     for (let i = 0; i < 2; i++) {
@@ -260,12 +263,11 @@ export class Level {
     const friend = await Pony.load(this.engine, next.friend, 'none');
     if (!this.alive) { m.dispose(); friend.dispose(); return; }
     this.engine.scene.add(m.root);
-    // bong bóng nhốt bạn trên lưng quái
     const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.15, 28, 20), new THREE.MeshPhysicalMaterial({ color: 0x9a7cff, transparent: true, opacity: 0.38, roughness: 0.1, clearcoat: 1, depthWrite: false, emissive: 0x2a0f60 }));
     bubble.renderOrder = 2;
     friend.root.scale.setScalar(0.62);
     this.engine.scene.add(bubble, friend.root);
-    this.target = { m, s: this.player.s + gap, hp: 3, friendId: next.friend, friend, bubble, boostT: 0, gap };
+    this.target = { m, s: this.mainS + gap, hp: 3, friendId: next.friend, friend, bubble, boostT: 0, gap };
     this.updateHud();
   }
 
@@ -276,7 +278,7 @@ export class Level {
     this.engine.scene.add(n.root);
     n.flying = true;
     this.nmm = n;
-    this.lastTurnS = this.player.s + 25;
+    this.lastGateS = 20;
     ui.setHarmony(0);
   }
 
@@ -302,7 +304,6 @@ export class Level {
   // ================================================================== chạy bài
 
   async run(): Promise<Outcome> {
-    // mở đầu: camera đứng trước mặt, người kể + người nhà chào
     this.camMode = 'front';
     const key = this.def.id === 'final' ? 'lv_final' : `lv_${this.def.id.replace('-', '_')}`;
     await narrate(key);
@@ -319,6 +320,8 @@ export class Level {
       await narrate('final_3');
     }
     if (!this.alive) return 'quit';
+    await narrate('keys');
+    if (!this.alive) return 'quit';
     this.camMode = 'follow';
     await ui.countdown();
     if (!this.alive) return 'quit';
@@ -328,35 +331,31 @@ export class Level {
     return this.ended;
   }
 
-  /** Giữ / thả nút chạy. */
+  /** Giữ / thả ↑. */
   setHold(on: boolean): void {
     this.holding = on || this.auto;
     if (on) this.idleT = 0;
   }
 
-  /** Chạm nút cánh. */
+  /** Nháy ↑ 2 lần: bay / nhảy xa (kỹ năng có sẵn, không cần chướng ngại). */
   pressFly(): void {
-    if (!this.started || this.over || this.player.alwaysFly) return;
+    if (!this.started || this.over || this.player.alwaysFly || this.cutscene) return;
     if (this.player.fly()) {
       sfx('sfx_fly', 0.45);
-      if (this.obSlow) { this.clearSlow(); }
+      if (this.obSlow) this.clearSlow();
     }
   }
 
-  /** Chạm màn hình: trúng sao / biển đáp án thì chọn. Trả về true nếu đã dùng cú chạm. */
-  tap(x: number, y: number): boolean {
-    if (!this.pickResolve || !this.choices.length) return false;
-    const hits = this.choices.filter((c) => !c.gone).flatMap((c) => c.hits);
-    const hit = this.engine.pick(x, y, hits);
-    const star = hit?.object.userData.star as LetterStar | undefined;
-    if (!star) return false;
+  /** ← (−1) / → (+1): chọn đường ở ngã rẽ / vòng mây. Trả về true nếu đã dùng phím. */
+  steer(dir: number): boolean {
+    if (!this.pickResolve) return false;
     const r = this.pickResolve;
     this.pickResolve = null;
-    r(star);
+    r(dir);
     return true;
   }
 
-  /** Nghe lại câu hỏi (nút 🔊). */
+  /** Nghe lại câu hỏi (nút 🔊 / phím R). */
   repeat(): void { if (this.currentAsk && this.pickResolve) { void play(this.currentAsk); this.askAt = this.engine.time; } }
 
   // ================================================================== mỗi khung
@@ -366,23 +365,30 @@ export class Level {
     this.t += dt;
     const d = this.def;
     const p = this.player;
-    // tốc độ mong muốn: giữ nút (hoặc đang hỏi / máy tự chạy) → chạy
-    let want = (this.started && !this.over && !this.cutscene && (this.holding || this.busy)) ? d.speed : 0;
-    // ngã rẽ: chưa chọn đường thì không vào được
-    const pendingFork = this.events.find((e) => e.kind === 'fork' && !e.answered && e.fork && p.s > e.fork.s0 - 20);
-    if (pendingFork && p.s > pendingFork.fork!.s0 - 1.5 && !p.side) want = 0;
+    const trip = this.junctions.find((j) => j.trip);
+    // tốc độ mong muốn: giữ ↑ (hoặc đang hỏi / đang đi nhầm đường: tự chạy chậm)
+    let want = this.started && !this.over && !this.cutscene && (this.holding || this.busy) ? d.speed : 0;
+    if (trip && (trip.trip === 'go' || trip.trip === 'back')) want = d.speed * 0.8;
+    // chưa chọn đường thì không vào được ngã rẽ / vòng mây
+    const pending = this.junctions.find((j) => j.asked && !j.choice);
+    if (pending && p.s > pending.turn.s - 1.5) want = 0;
+    if (this.gate && !this.gate.choice && p.s > this.gate.s - 6) want = 0;
     p.update(gdt, dt, want);
-    if (pendingFork && !p.side) p.s = Math.min(p.s, pendingFork.fork!.s0 - 1);
-    if (this.over && !this.track.closed) p.s = Math.min(p.s, this.track.length - 2);
+    if (pending && !trip) p.s = Math.min(p.s, pending.turn.s - 1);
+    if (this.over && !this.track.closed && p.track === this.track) p.s = Math.min(p.s, this.track.length - 2);
 
+    if (trip) this.tickTrip(trip);
     if (this.started && !this.over) {
-      this.obstacles();
-      if (!this.busy) {
-        // nhắc giữ nút khi đứng yên lâu
+      if (!trip) {
+        this.obstacles();
+        this.junctionTriggers();
+      }
+      if (!this.busy && !trip) {
+        // nhắc giữ ↑ khi đứng yên lâu
         if (p.v < 0.5 && !this.holding) {
           this.idleT += dt;
-          if (this.idleT > 7) { this.idleT = -9; ui.runHint(true); this.talk(null, bankLine('hold')); }
-        } else { if (this.idleT > 0 || this.idleT < -0.5) ui.runHint(false); this.idleT = 0; }
+          if (this.idleT > 7) { this.idleT = -9; ui.keyHint('run'); this.talk(null, bankLine('hold')); }
+        } else if (this.idleT !== 0) { if (!this.obSlow) ui.keyHint(null); this.idleT = 0; }
       }
       if (d.mode === 'race') this.tickRace(gdt, dt);
       else if (d.mode === 'chase') this.tickChase(gdt, dt);
@@ -391,24 +397,27 @@ export class Level {
     } else {
       if (d.mode === 'race') for (const r of this.racers) r.update(gdt, dt, 0);
       if (d.mode === 'chase') this.placeChasers(gdt, dt);
-      if (d.mode === 'hunt') this.placeTarget(gdt, dt, 0);
+      if (d.mode === 'hunt') this.placeTarget(gdt, dt);
       if (d.mode === 'final') this.placeNmm(gdt, dt);
     }
-    for (const h of this.helpers) { h.latGoal = -1.8; h.update(gdt, dt, Math.max(0, p.v * 0.98 + (p.s - 3 - h.s) * 1.5)); }
+    for (const h of this.helpers) {
+      h.latGoal = -1.8;
+      h.update(gdt, dt, trip ? 0 : Math.max(0, p.v * 0.98 + (this.mainS - 3 - h.s) * 1.5));
+    }
+    for (const j of this.junctions) j.mon?.update(gdt, dt);
 
-    // ngọc + hiệu ứng chạy
     this.scenery.collectGems(p.center(this.tmpV), 1.5);
     this.trail(dt);
     this.updateOrbs(gdt);
-    for (const c of this.choices) c.update(dt, this.engine.camera);
+    for (const j of this.junctions) for (const c of j.signs) c.update(dt, this.engine.camera);
+    if (this.gate) for (const c of this.gate.signs) c.update(dt, this.engine.camera);
     // nhắc lại câu hỏi khi bé im lâu (16 s, 32 s…)
     if (this.pickResolve && this.currentAsk && this.engine.time - this.askAt > 16 + this.askRepeats * 16) {
       this.askRepeats++;
       this.askAt = this.engine.time;
       void play(this.currentAsk);
-      for (const c of this.choices) void c.pop();
     }
-    this.scenery.update(dt, this.engine.time, p.s, this.engine.camera);
+    this.scenery.update(dt, this.engine.time, this.mainS, this.engine.camera);
     this.updateCamera(dt, false);
     this.updateHud();
     this.prevS = p.s;
@@ -422,10 +431,6 @@ export class Level {
       const cols = [0xff4d6d, 0xff9a3c, 0xffd93d, 0x6bd968, 0x4fb3ff, 0xc86bff];
       for (let i = 0; i < 2; i++) m.emit({ x: c.x + (Math.random() - 0.5) * 0.8, y: c.y + p.y + 0.5 + Math.random() * 0.6, z: c.z + (Math.random() - 0.5) * 0.8, color: cols[Math.floor(Math.random() * 6)], vy: 0.3, max: 0.8, size: 0.3 });
     }
-    if (p.mudT > 0 && p.v > 2 && Math.random() < dt * 30) {
-      const c = p.pose.pos;
-      m.emit({ x: c.x + (Math.random() - 0.5), y: c.y + 0.2, z: c.z + (Math.random() - 0.5), color: 0x9b6a3c, vy: 2.2, vx: (Math.random() - 0.5) * 2, max: 0.5, size: 0.3, gravity: -9 });
-    }
     if (this.cosmetic.has('aura') && Math.random() < dt * 14) m.twinkle(p.center(this.tmpV), 0xffe08a, 1, 1.4);
     if (p.pony.flying && !p.pony.flyer) {
       const c = p.center(this.tmpV);
@@ -433,25 +438,17 @@ export class Level {
     }
   }
 
-  // ------------------------------------------------------------------ chướng ngại: chậm lại, bay qua, vấp
+  // ------------------------------------------------------------------ chướng ngại: chậm lại, dừng chờ nháy ↑ 2 lần
 
   private obstacles(): void {
     const p = this.player, tr = this.track;
-    const ahead = (s: number) => (tr.closed ? ((s - p.s) % tr.length + tr.length) % tr.length : s - p.s);
     let near: Obstacle | null = null;
     for (const ob of this.scenery.obstacles) {
-      if (ob.hit) {
-        // vòng kín: chướng ngại đã vỡ hiện lại khi Nhím đi xa
-        if (tr.closed && ahead(ob.s) > 60 && ahead(ob.s) < tr.length - 40) { ob.hit = false; ob.group.visible = true; }
-        continue;
-      }
-      const a = ahead(ob.s);
-      // vừa đi qua
-      const pa = tr.closed ? this.prevAhead(ob.s) : 0;
-      const crossed = tr.closed ? (pa > 0 && pa <= 4 && (a > tr.length - 4 || a === 0)) : this.prevS < ob.s && p.s >= ob.s;
-      if (crossed) {
+      if (ob.hit) continue;
+      const a = ob.s - p.s;
+      if (this.prevS < ob.s && p.s >= ob.s) {
+        // đi qua lúc không bay (hiếm: máy test / bé bay quá sớm rồi đáp xuống sát): vấp nhẹ, không tính sai
         if (p.y < ob.h * 0.85) {
-          // vấp: lộn 1 vòng, chậm lại, chướng ngại vỡ tung
           this.scenery.smash(ob);
           p.v = Math.min(p.v, 2.5);
           void p.pony.tumble();
@@ -461,105 +458,294 @@ export class Level {
         if (this.obSlow === ob) this.clearSlow();
         continue;
       }
-      if (a > 0 && a < 12 && (!near || a < ahead(near.s))) near = ob;
+      if (a > 0 && a < 11 && (!near || a < near.s - p.s)) near = ob;
     }
-    // máy tự chạy (test) / người nhà: tự bay qua
-    if (this.auto && near && ahead(near.s) < 3.2 && !p.airborne) this.pressFly();
     for (const r of this.racers) {
       for (const ob of this.scenery.obstacles) if (ob.s - r.s > 0 && ob.s - r.s < 2.6 && !r.airborne) r.fly();
     }
-    // chậm lại khi sắp tới chướng ngại (chỉ khi đang chạy và chưa bay)
-    if (near && !this.busy && !p.airborne && p.v > 2.5 && this.obSlow !== near) {
+    if (!near || p.airborne) { if (this.obSlow && p.airborne) this.clearSlow(); return; }
+    const a = near.s - p.s;
+    // dừng hẳn trước chướng ngại tới khi bé bay (không bao giờ bị vấp vì không kịp)
+    if (a < 3) p.s = near.s - 3;
+    if (this.auto && a <= 3.2) this.pressFly();
+    if (!this.busy && this.obSlow !== near && p.v > 2.5) {
       this.obSlow = near;
-      this.engine.slow(0.2);
-      ui.flyHint(true);
-      this.talk(null, bankLine('fly'));
+      this.engine.slow(0.15);
+      ui.keyHint('fly');
+      this.talk(null, this.taughtFly ? bankLine('fly') : { key: 'fly_teach', text: '' });
+      this.taughtFly = true;
     }
-    if (this.obSlow && (p.airborne || p.v < 1)) this.clearSlow();
+    void tr;
   }
-  private prevAhead(s: number): number { const L = this.track.length; return ((s - this.prevS) % L + L) % L; }
 
   private clearSlow(): void {
     this.obSlow = null;
-    ui.flyHint(false);
+    ui.keyHint(null);
     if (!this.busy) this.engine.slow(1);
+  }
+
+  // ------------------------------------------------------------------ ngã rẽ (câu hỏi) trên mặt đất
+
+  private junctionTriggers(): void {
+    if (this.busy || this.def.mode === 'final') return;
+    const p = this.player;
+    const j = this.junctions.find((x) => !x.asked && p.s > x.turn.s - APPROACH + 4);
+    if (j && !this.obSlow) void this.askJunction(j);
+    // tới điểm rẽ: đi theo đường đã chọn
+    for (const x of this.junctions) {
+      if (!x.choice || x.trip || p.track !== this.track) continue;
+      if (this.prevS < x.turn.s && p.s >= x.turn.s && x.choice !== x.turn.dir) {
+        x.trip = 'go';
+        p.track = x.branch;
+        p.s = Math.max(0, p.s - x.turn.s);
+        p.lat = p.latGoal = 0;
+        this.cutscene = false;
+      }
+    }
+  }
+
+  /** Hỏi ở ngã rẽ: biển đáp án ở đầu 2 đường, chờ ← / →. Đường đúng = đường chính. */
+  private async askJunction(j: Junction): Promise<void> {
+    j.asked = true;
+    this.busy = true;
+    const { q, si } = j.slot;
+    const step = q.steps[si];
+    // biển trái / phải (đường chính bên j.turn.dir)
+    j.signs = [-1, 1].map((side, i) => {
+      const star = this.makeSign(step, step.choices[i]);
+      const onMain = side === j.turn.dir;
+      (onMain ? this.track : j.branch).pose(onMain ? j.turn.s + 11 : 11, 0, this.tmpPose);
+      star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + 3.4, this.tmpPose.pos.z);
+      star.root.userData.side = side;
+      this.addPost(star);
+      this.engine.scene.add(star.root);
+      void star.appear(80);
+      return star;
+    });
+    const dir = await this.ask(j.slot, j.signs, j.turn.dir);
+    if (!this.alive) return;
+    j.choice = dir;
+    const ok = dir === j.turn.dir;
+    this.player.latGoal = dir * 1.2;
+    setTimeout(() => { if (this.alive && !j.trip) this.player.latGoal = 0; }, 1600);
+    this.onAnswer(j, ok);
+  }
+
+  /** Hệ quả 1 lượt chọn theo kiểu bài. */
+  private onAnswer(j: Junction, ok: boolean): void {
+    const mode = this.def.mode;
+    if (mode === 'race') {
+      if (ok) { this.player.boostT = 2.4; this.racerBias = this.racerBias.map((b) => b - 6); this.talk(null, bankLine('boost')); }
+      else this.racerBias = this.racerBias.map((b) => b + 6);
+      this.afterAnswer(j.slot, ok, ok);
+      this.busy = false;
+    } else if (mode === 'chase') {
+      if (ok) { this.chasers.forEach((c) => { c.gap += 3; }); this.talk(null, bankLine('escape')); }
+      this.afterAnswer(j.slot, ok, ok);
+      this.busy = false;
+      this.waveAnswers.push(ok);
+      void this.checkWave();
+    } else {
+      void this.huntShot(j, ok);
+    }
+  }
+
+  /** Đi nhầm đường: chạy vào nhánh cụt → dừng (đá / quái) → người nhà gọi lại → quay ra ngã rẽ → đi đường đúng. */
+  private tickTrip(j: Junction): void {
+    const p = this.player;
+    if (j.trip === 'go' && p.s >= j.branch.length - 7) {
+      j.trip = 'end';
+      p.v = 0;
+      void this.deadEnd(j);
+    } else if (j.trip === 'back' && p.s >= j.back.length - 0.6) {
+      p.track = this.track;
+      p.s = j.turn.s + 0.4;
+      p.lat = p.latGoal = 0;
+      j.choice = j.turn.dir;
+      j.trip = null;
+      this.cutscene = false;
+      // bị đuổi: quay ra thì quái đã tới sát, bắn 1 phát (đã mất tim ở lúc chọn sai)
+      if (this.def.mode === 'chase') {
+        const c = this.chasers.find((x) => x.m.possessed);
+        if (c) { const o = this.launchOrb(c.m.center(), 0x9b5cff, false); o.hitPlayer = true; }
+      }
+    }
+  }
+
+  private async deadEnd(j: Junction): Promise<void> {
+    this.cutscene = true;
+    if (j.mon) {
+      void j.mon.giggle();
+      this.engine.magic.burst(j.mon.center(), 40, 0x9b5cff, 2.2, 0.3, 0.8, -1);
+      sfx('sfx_charge', 0.4);
+      this.talk(null, bankLine('stubmon'));
+    } else this.talk(null, bankLine('deadend'));
+    // người nhà gọi lại (bài đua), người kể nhắc (bài khác)
+    const r = this.racers[Math.floor(this.rnd() * this.racers.length)];
+    if (r) this.talk(r.pony.id, { key: familyKey(r.pony.id as FamilyId, 'back'), text: FAMILY_LINES[r.pony.id as FamilyId].back });
+    else this.talk(null, bankLine('back'));
+    await this.talking;
+    if (!this.alive) return;
+    // quay đầu chạy ra
+    const p = this.player;
+    p.track = j.back;
+    p.s = Math.max(0, j.branch.length - p.s);
+    j.trip = 'back';
+    this.cutscene = false;
+  }
+
+  // ------------------------------------------------------------------ câu hỏi chung (ngã rẽ / vòng mây)
+
+  private makeSign(step: Step, label: string): LetterStar {
+    return new LetterStar(step.tone ? { label: '', tone: label as ToneName, size: 1.5 } : { label, size: 1.5 });
+  }
+  private addPost(star: LetterStar): void {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.7, 8), new THREE.MeshLambertMaterial({ color: 0xc98d5e }));
+    post.position.y = 1.35;
+    star.root.add(post);
+  }
+
+  /**
+   * Hỏi 1 lượt: thời gian gần như dừng, hiện bảng (lượt đầu của câu), đọc câu hỏi, chờ ← / → (không đếm giờ).
+   * `mainDir`: bên có đáp án đúng. Trả về bên bé chọn. Sai: biển sai lắc, đọc chữ / số bé chọn, biển đúng sáng lên.
+   */
+  private async ask(slot: Slot, signs: LetterStar[], mainDir: number): Promise<number> {
+    const { q, si } = slot;
+    const step = q.steps[si];
+    this.engine.slow(0.035);
+    if (this.obSlow) { this.obSlow = null; }
+    await this.talking;
+    if (!this.alive) return 0;
+    if (slot.first) {
+      ui.showPanel(q.panel, this.def.theme.fruit);
+      for (const k of q.intro) { await play(k); if (!this.alive) return 0; }
+    }
+    ui.keyHint('turn');
+    this.currentAsk = step.ask;
+    this.askAt = this.engine.time;
+    this.askRepeats = 0;
+    await play(step.ask);
+    if (!this.alive) return 0;
+    if (!this.taughtTurn) { this.taughtTurn = true; void play('turn_teach'); }
+    const dir = await new Promise<number>((resolve) => {
+      this.pickResolve = resolve;
+      setAnswer(`${step.tone ? 'tone' : 'turn'}:${step.answer}`, (good) => {
+        if (this.pickResolve === resolve) { this.pickResolve = null; resolve(good ? mainDir : -mainDir); }
+      });
+      if (this.autoAnswer) setTimeout(() => { if (this.pickResolve === resolve) { this.pickResolve = null; resolve(mainDir); } }, 700);
+    });
+    setAnswer(null, null);
+    this.currentAsk = null;
+    ui.keyHint(null);
+    if (!this.alive || !dir) return 0;
+    stopSpeech();
+    const picked = signs.find((c) => c.root.userData.side === dir)!;
+    const right = signs.find((c) => c.root.userData.side === mainDir)!;
+    if (dir === mainDir) {
+      sfx('sfx_win', 0.45);
+      void picked.pop();
+    } else {
+      sfx('sfx_soft', 0.5);
+      void picked.wobble();
+      void right.pop();
+      this.engine.magic.burst(right.worldCenter(), 30, 0xffe08a, 2, 0.25, 0.7, -1);
+    }
+    if (q.panel.type === 'word') { ui.fillWord(q.panel.word, Math.min(si + 1, Array.from(q.panel.word).length)); if (step.tone) ui.showWord(q.panel.word); }
+    if (q.panel.type === 'eq') ui.solvePanel(step.answer);
+    // biển bay đi sau khi Nhím chạy qua
+    const old = signs.slice();
+    setTimeout(() => { for (const c of old) void c.vanish(400); }, 2600);
+    setTimeout(() => this.disposeSigns(old), 3200);
+    this.engine.slow(1);
+    return dir;
+  }
+
+  private disposeSigns(list: LetterStar[]): void {
+    for (const c of list) {
+      c.root.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.geometry.type === 'CylinderGeometry') { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } });
+      c.dispose();
+    }
+    for (const j of this.junctions) j.signs = j.signs.filter((s) => !list.includes(s));
+  }
+
+  /**
+   * Sau mỗi lượt: trừ tim nếu sai, ghi ôn (1 lần cho cả câu), rồi (nối sau câu đang nói) khen / "chưa đúng" + đáp án.
+   * Ghép tiếng: lượt giữa sai thì đọc tên chữ / dấu đúng; lượt cuối đọc đánh vần cả tiếng (chữ sáng theo).
+   * `praised`: nơi gọi đã nói câu riêng (đường tắt, thoát, trúng rồi…) → bỏ câu khen chung.
+   */
+  private afterAnswer(slot: Slot, ok: boolean, praised = false): void {
+    const { q, si, last } = slot;
+    const step = q.steps[si];
+    if (!ok) {
+      if (!this.qWrong.has(q.key)) { this.qWrong.add(q.key); markWrong(this.progress, q.key); }
+      this.wrong++;
+      this.hearts--;
+      ui.setHearts(this.hearts, HEARTS);
+      sfx('sfx_hurt', 0.5);
+    } else if (last && !this.qWrong.has(q.key)) markRight(this.progress, q.key);
+    const lose = this.hearts <= 0;
+    const prev = this.talking;
+    this.talking = (async () => {
+      await prev;
+      if (!this.alive) return;
+      if (!ok || (!praised && last)) await play(bankLine(ok ? 'ok' : 'no').key);
+      if (q.panel.type === 'word') {
+        if (!ok && !last) await play(step.tone ? toneLabelKey(step.answer) : nameKey(step.answer));
+        if (last && q.lit) { await speakSequence(q.learn, (i) => ui.litWord(q.lit![i] ?? null), 120); ui.litWord(null); }
+      } else for (const k of q.learn) await play(k);
+      if (last) ui.showPanel(null);
+    })();
+    if (lose) void this.lose();
   }
 
   // ------------------------------------------------------------------ ĐUA
 
   private tickRace(gdt: number, dt: number): void {
-    const p = this.player, L = this.track.length;
-    // ngã rẽ
-    for (const e of this.events) if (e.kind === 'fork' && !e.done && !this.busy && p.s >= e.s) { e.done = true; void this.forkQuestion(e); }
-    // người nhà: bám theo Nhím kiểu dây chun (không bỏ xa, không tụt mất), đoạn cuối theo số câu sai
+    const p = this.player, L = this.track.length, ms = this.mainS;
+    // người nhà: dây chun quanh Nhím (không bỏ xa, không tụt mất, Nhím đứng / đi nhầm đường thì chờ), đoạn cuối theo số câu sai
     this.racers.forEach((r, i) => {
-      const lastStretch = p.s > L - 90;
+      const lastStretch = ms > L - 90;
       const wobble = Math.sin(this.t * 0.35 + i * 2.1) * 3.5;
       const offset = lastStretch ? (this.wrong - 1) * 3.2 + (i ? 1.2 : -0.6) : wobble + this.racerBias[i];
       this.racerBias[i] *= Math.exp(-dt * 0.12);
-      const target = p.s + offset;
-      let want = this.def.speed * Math.min(1.35, Math.max(0.45, 1 + (target - r.s) * 0.07));
-      // Nhím đứng lại → người nhà chờ (không bỏ xa quá 7 m)
-      if (p.v < 1 && r.s > p.s + 6) want = 0;
-      if (r.finishedAt >= 0 || this.over) want = r.s < L - 3 ? 3 : 0;
-      // chọn nhánh khi vào ngã rẽ
-      const fk = this.track.forkAt(r.s + 2);
-      if (fk.fork && !r.side) r.side = this.rnd() < 0.5 ? -1 : 1;
-      r.latGoal = (i ? LANE : -LANE) * (this.track.forkAt(r.s).fork ? 0.35 : 1);
+      let want = this.def.speed * Math.min(1.35, Math.max(0.45, 1 + (ms + offset - r.s) * 0.07));
+      if ((p.v < 1 || p.track !== this.track) && r.s > ms + 6) want = 0;
+      if (r.finishedAt >= 0) want = r.s < L - 3 ? 3 : 0;
+      // đợi ở ngã rẽ chưa chọn (không đi trước vào đoạn rẽ khi Nhím còn đang nghĩ)
+      const pend = this.junctions.find((j) => !j.choice && r.s > j.turn.s - 6 && r.s < j.turn.s);
+      if (pend && this.busy) want = Math.min(want, 2);
+      r.latGoal = i ? LANE : -LANE;
       r.update(gdt, dt, want);
       if (r.s >= L - 14 && r.finishedAt < 0) r.finishedAt = this.t;
     });
-    p.latGoal = 0;
-    // nói chuyện lúc đua
     this.chatT -= dt;
-    if (this.chatT <= 0 && !this.busy) {
+    if (this.chatT <= 0 && !this.busy && !this.cutscene) {
       this.chatT = 14 + this.rnd() * 10;
-      const ahead = this.racers.filter((r) => r.s > p.s + 4);
-      if (p.v < 1 && this.racers.length) { const r = this.racers[0]; this.familySay(r.pony.id as FamilyId, 'wait'); }
+      const ahead = this.racers.filter((r) => r.s > ms + 4);
+      if (p.v < 1 && this.racers.length) this.familySay(this.racers[0].pony.id as FamilyId, 'wait');
       else if (ahead.length) this.familySay(ahead[0].pony.id as FamilyId, 'ahead');
     }
-    if (p.s >= L - 14 && !this.over) void this.finishRace();
-  }
-
-  private async forkQuestion(e: Ev): Promise<void> {
-    const q = this.nextQ();
-    const res = await this.ask(q, 'signs', e.fork);
-    if (!this.alive || res.side === undefined) return;
-    this.player.side = res.side;
-    e.answered = true;
-    if (res.ok) {
-      this.player.boostT = 2.6;
-      this.racerBias = this.racerBias.map((b) => b - 7);
-      this.talk(null, bankLine('boost'));
-    } else {
-      this.player.mudT = 2.0;
-      this.racerBias = this.racerBias.map((b) => b + 7);
-    }
-    this.afterAnswer(q, res.ok, true);
-    this.busy = false;
+    if (p.track === this.track && p.s >= L - 14 && !this.over) void this.finishRace();
   }
 
   private async finishRace(): Promise<void> {
     this.over = true;
     this.busy = true;
     this.engine.slow(1);
-    ui.flyHint(false);
+    ui.keyHint(null);
     this.player.finishedAt = this.t;
     const before = this.racers.filter((r) => r.finishedAt >= 0 && r.finishedAt <= this.t);
     this.finishPlace = 1 + before.length;
     this.winner = this.finishPlace === 1 ? 'twilight' : before.sort((a, b) => a.finishedAt - b.finishedAt)[0].pony.id;
     sfx('sfx_win', 0.6);
     ui.confetti(40);
-    await wait(900);
+    await this.talking;
+    await wait(500);
     if (!this.alive) return;
     this.camMode = 'front';
     void this.player.pony.celebrate();
-    if (this.finishPlace === 1) {
-      const r = this.racers[Math.floor(this.rnd() * this.racers.length)];
-      await this.familySay(r.pony.id as FamilyId, 'win');
-    } else {
-      await this.familySay(this.winner as FamilyId, 'first');
-    }
+    if (this.finishPlace === 1) await this.familySay(this.racers[Math.floor(this.rnd() * this.racers.length)].pony.id as FamilyId, 'win');
+    else await this.familySay(this.winner as FamilyId, 'first');
     await wait(400);
     this.end('win');
   }
@@ -567,89 +753,63 @@ export class Level {
   // ------------------------------------------------------------------ BỊ ĐUỔI
 
   private placeChasers(gdt: number, dt: number): void {
-    const p = this.player;
+    const p = this.player, ms = this.mainS;
+    const onMain = p.track === this.track;
     for (const c of this.chasers) {
-      // giữ khoảng cách sau lưng Nhím: Nhím đứng thì quái cũng đứng (không bao giờ bắt được vì thả tay)
-      const goalS = p.s - c.gap;
-      c.s += p.v * gdt + (goalS - c.s) * Math.min(1, gdt * 2.2);
-      this.track.pose(c.s, c.lat + Math.sin(this.t * 1.3 + c.gap) * 0.5, 0, this.tmpPose);
+      // giữ khoảng cách sau lưng Nhím (Nhím đứng thì quái đứng); Nhím đi nhầm đường → quái dồn tới sát ngã rẽ
+      const goalS = onMain ? ms - c.gap : ms - 2 - this.chasers.indexOf(c) * 1.2;
+      c.s += (onMain ? p.v * gdt : 0) + (goalS - c.s) * Math.min(1, gdt * 2.2);
+      this.track.pose(c.s, c.lat + Math.sin(this.t * 1.3 + c.gap) * 0.5, this.tmpPose);
       c.m.place(this.tmpPose.pos, this.tmpPose.yaw);
       c.m.setRunning(p.v > 1 || !this.started);
       c.m.update(gdt, dt);
     }
   }
-  private readonly tmpPose = Track.newPose();
 
   private tickChase(gdt: number, dt: number): void {
     const p = this.player, L = this.track.length;
+    // đợt kịch tính: 2 quái lao lên trước ngã rẽ đánh dấu
+    const wj = this.junctions.find((j) => j.wave && !j.asked && p.s > j.turn.s - APPROACH - 10);
+    if (wj && !wj.asked && !this.chasers.some((c) => c.extra)) { wj.wave = false; void this.spawnWave(); }
     this.placeChasers(gdt, dt);
-    for (const e of this.events) if (e.kind === 'attack' && !e.done && !this.busy && p.s >= e.s && !p.airborne) { e.done = true; void this.attack(e); }
-    // khoảng cách quái về lại bình thường
     this.chasers.forEach((c, i) => { if (!c.extra) c.gap += ((4 + i * 1.6) - c.gap) * Math.min(1, dt * 0.3); });
-    if (p.s >= L - 14 && !this.over) void this.chaseSafe();
+    if (p.track === this.track && p.s >= L - 14 && !this.over) void this.chaseSafe();
   }
-
-  private async attack(e: Ev): Promise<void> {
-    this.busy = true;
-    if (e.wave) {
-      // đợt kịch tính: thêm 2 quái lao lên sát sau lưng
-      await this.spawnWave();
-      if (!this.alive) return;
-      this.talk(null, { key: 'wave', text: '', voice: 'my' });
-      await this.talking;
-    }
-    const pool = this.chasers.filter((c) => c.m.possessed);
-    const c = pool[Math.floor(this.rnd() * pool.length)];
-    const q = this.nextQ();
-    void c.m.charge();
-    this.talk(null, bankLine('attack'));
-    const orb = this.launchOrb(c.m.center(), 0x9b5cff, true);
-    const res = await this.ask(q, 'stars');
-    if (!this.alive) return;
-    this.resolveOrb(orb, res.ok);
-    if (res.ok) {
-      void this.player.pony.barrel(this.rnd() < 0.5 ? 1 : -1);
-      this.talk(null, bankLine('dodge'), 300);
-    } else {
-      this.chasers.forEach((x) => { x.gap = Math.max(2.6, x.gap - 1.2); });
-      void c.m.giggle();
-    }
-    this.afterAnswer(q, res.ok, true);
-    this.busy = false;
-    this.waveAnswers.push(res.ok);
-    // đợt kịch tính xong (2 câu): đúng cả 2 → khiên phép đẩy lùi quái
-    const extras = this.chasers.filter((x) => x.extra);
-    if (extras.length && this.waveAnswers.length >= 2) {
-      const both = this.waveAnswers.slice(-2).every(Boolean);
-      this.waveAnswers = [];
-      await this.talking;
-      if (!this.alive) return;
-      if (both) {
-        this.engine.magic.ring(this.player.center(this.tmpV), 0xffe08a, 120, 6);
-        this.engine.magic.ring(this.player.center(this.tmpV), 0xff7ac8, 90, 4.5);
-        sfx('sfx_win', 0.5);
-        this.talk(null, { key: 'shield', text: '', voice: 'my' });
-        for (const x of this.chasers) x.gap += 9;
-      }
-      for (const x of extras) void this.dropChaser(x);
-    }
-  }
-  private waveAnswers: boolean[] = [];
 
   private async spawnWave(): Promise<void> {
     const kinds = this.def.monsters;
+    this.waveAnswers = [];
     for (let i = 0; i < 2; i++) {
       const m = await Monster.create(this.engine, kinds[i % kinds.length]);
       if (!this.alive) { m.dispose(); return; }
       this.engine.scene.add(m.root);
-      const c: Chaser = { m, s: this.player.s - 30, gap: 2.8 + i * 1.0, lat: i ? 2.6 : -2.6, extra: true };
-      this.chasers.push(c);
+      this.chasers.push({ m, s: this.player.s - 30, gap: 2.8 + i, lat: i ? 2.6 : -2.6, extra: true });
     }
+    this.talk(null, { key: 'wave', text: '' });
+  }
+
+  /** Đợt kịch tính xong (2 lượt): đúng cả 2 → khiên phép đẩy lùi cả đám. */
+  private async checkWave(): Promise<void> {
+    const extras = this.chasers.filter((x) => x.extra);
+    if (!extras.length || this.waveAnswers.length < 2) return;
+    const both = this.waveAnswers.slice(-2).every(Boolean);
     this.waveAnswers = [];
+    await this.talking;
+    if (!this.alive) return;
+    if (both) {
+      this.engine.magic.ring(this.player.center(this.tmpV), 0xffe08a, 120, 6);
+      this.engine.magic.ring(this.player.center(this.tmpV), 0xff7ac8, 90, 4.5);
+      sfx('sfx_win', 0.5);
+      this.talk(null, { key: 'shield', text: '' });
+      for (const x of this.chasers) x.gap += 9;
+    }
+    for (const x of extras) void this.dropChaser(x);
   }
 
   private async dropChaser(c: Chaser): Promise<void> {
-    await tween(1200, (k) => { c.gap = c.gap + k * 1.5; c.m.root.scale.setScalar(1 - k * 0.9); });
+    c.extra = false;
+    await tween(1200, (k) => { c.gap += k * 1.5; c.m.root.scale.setScalar(Math.max(0.01, 1 - k * 0.9)); });
+    if (!this.alive) return;
     c.m.dispose();
     this.chasers.splice(this.chasers.indexOf(c), 1);
   }
@@ -658,15 +818,14 @@ export class Level {
     this.over = true;
     this.busy = true;
     this.engine.slow(1);
-    ui.flyHint(false);
+    ui.keyHint(null);
     sfx('sfx_win', 0.6);
+    await this.talking;
     await narrate('safe');
     if (!this.alive) return;
     this.camMode = 'front';
     void this.player.pony.celebrate();
-    for (const c of this.chasers) {
-      void this.engine.magic.beam(this.player.pony.horn(), c.m.center(), 0xffe08a, 0xff7ac8, 0.8);
-    }
+    for (const c of this.chasers) void this.engine.magic.beam(this.player.pony.horn(), c.m.center(), 0xffe08a, 0xff7ac8, 0.8);
     await wait(800);
     for (const c of this.chasers) void c.m.purify();
     this.talk(null, bankLine('purify'));
@@ -677,19 +836,20 @@ export class Level {
 
   // ------------------------------------------------------------------ ĐUỔI QUÁI
 
-  private placeTarget(gdt: number, dt: number, playerV: number): void {
+  private placeTarget(gdt: number, dt: number): void {
     const t = this.target;
     if (!t) return;
-    const p = this.player;
-    // quái chạy chậm hơn Nhím chút; bị bắn trúng thì vọt lên; bỏ xa quá thì chờ (quay lại trêu)
-    let v = this.def.speed * 0.8;
-    if (t.boostT > 0) { t.boostT -= gdt; v *= 1.9; }
-    const gap = t.s - p.s;
-    if (gap > 34) v = Math.min(v, playerV * 0.6);
+    const p = this.player, ms = this.mainS;
+    // quái giữ khoảng 12–20 m phía trước (luôn thấy để bắn); bị trúng thì vọt lên; Nhím đứng / đi nhầm thì quái chạy chậm trêu
+    const gapGoal = t.boostT > 0 ? 24 : 15;
+    if (t.boostT > 0) t.boostT -= gdt;
+    let v = Math.max(0, (p.track === this.track ? p.v : 1) + (gapGoal - (t.s - ms)) * 0.6);
     if (!this.started || this.over || !t.m.possessed) v = 0;
-    t.s += v * gdt;
-    t.gap = t.s - p.s;
-    this.track.pose(t.s, Math.sin(this.t * 0.7) * 1.6, 0, this.tmpPose);
+    // không chạy quá ngã rẽ chưa hỏi xa quá (bé phải thấy quái đi đường nào)
+    t.s += Math.min(v, this.def.speed * 1.6) * gdt;
+    t.s = Math.min(t.s, this.track.length - 6);
+    t.gap = t.s - ms;
+    this.track.pose(t.s, Math.sin(this.t * 0.7) * 1.4, this.tmpPose);
     t.m.place(this.tmpPose.pos, this.tmpPose.yaw);
     t.m.setRunning(v > 0.5);
     t.m.update(gdt, dt);
@@ -705,38 +865,27 @@ export class Level {
   }
 
   private tickHunt(gdt: number, dt: number): void {
-    const t = this.target;
-    this.placeTarget(gdt, dt, this.player.v);
-    if (!t || this.busy || !t.m.possessed) return;
-    const nearOb = this.scenery.obstacles.some((o) => !o.hit && ((o.s - this.player.s) % this.track.length + this.track.length) % this.track.length < 16);
-    if (t.gap < 7.5 && !this.player.airborne && !nearOb) void this.huntQuestion(t);
+    this.placeTarget(gdt, dt);
   }
 
-  private async huntQuestion(t: Target): Promise<void> {
-    this.busy = true;
-    const q = this.nextQ();
-    this.talk(null, bankLine('near'));
-    const res = await this.ask(q, 'stars');
-    if (!this.alive) return;
-    if (res.ok) {
-      this.engine.slow(0.25);
+  /** Đuổi quái: chọn đúng → tia phép trúng quái phía trước; sai → quái cười chạy xa, Nhím vào đường cụt. */
+  private async huntShot(j: Junction, ok: boolean): Promise<void> {
+    const t = this.target;
+    if (ok && t && t.m.possessed) {
       sfx('sfx_zap', 0.5);
       await this.engine.magic.beam(this.player.pony.horn(), t.m.center(), 0xffe08a, 0xff7ac8, 0.7);
       if (!this.alive) return;
-      this.engine.slow(1);
       t.hp--;
       void t.m.hurt();
       this.talk(null, bankLine('zap'));
-      t.boostT = 1.3;
-    } else {
-      const miss = t.m.center().add(new THREE.Vector3(2.5, -1.5, 0));
-      void this.engine.magic.beam(this.player.pony.horn(), miss, 0x9fb3d9, 0xffffff, 0.6);
+      t.boostT = 1.2;
+    } else if (!ok && t) {
       void t.m.giggle();
       this.talk('nightmare', bankLine('laugh'));
-      t.boostT = 1.8;
+      t.boostT = 2;
     }
-    this.afterAnswer(q, res.ok, true);
-    if (t.hp <= 0) await this.freeFriend(t);
+    this.afterAnswer(j.slot, ok, true);
+    if (t && t.hp <= 0) await this.freeFriend(t);
     else this.busy = false;
   }
 
@@ -747,7 +896,6 @@ export class Level {
     if (!this.alive) return;
     await t.m.purify();
     if (!this.alive) return;
-    // bong bóng rung rồi vỡ, bạn rơi xuống chạy cùng Nhím
     const b = t.bubble!;
     await tween(380, (k) => b.scale.setScalar(1 + Math.sin(k * Math.PI * 6) * 0.1 * (1 + k)));
     this.engine.magic.burst(b.position, 110, 0xffffff, 3, 0.32, 1, -1.5);
@@ -759,13 +907,12 @@ export class Level {
     f.root.scale.setScalar(1);
     t.friend = null;
     const r = new Runner(f, this.track);
-    r.s = this.player.s - 1; r.lat = r.latGoal = -1.8;
+    r.s = this.mainS - 1; r.lat = r.latGoal = -1.8;
     this.helpers.push(r);
     this.friendsSaved.push(t.friendId);
     await narrate('hunt_free');
     await say(t.friendId, thanksKey(t.friendId));
     if (!this.alive) return;
-    // quái đã hiền: đứng lại vẫy, mờ dần phía sau
     const old = t.m;
     void tween(2500, (k) => old.root.scale.setScalar(Math.max(0.01, 1 - k))).then(() => old.dispose());
     this.target = null;
@@ -785,15 +932,15 @@ export class Level {
     }
   }
 
-  // ------------------------------------------------------------------ MÀN CUỐI: đấu Nữ hoàng Bóng Đêm
+  // ------------------------------------------------------------------ MÀN CUỐI: đấu Nữ hoàng Bóng Đêm (2 vòng mây)
 
   private placeNmm(gdt: number, dt: number): void {
     const n = this.nmm;
     if (!n) return;
     const p = this.player;
-    this.track.pose(p.s + 14, Math.sin(this.t * 0.5) * 3.5, 0, this.tmpPose);
-    // bay cao hơn hàng sao đáp án để luôn thấy Nữ hoàng
-    n.place(this.tmpPose.pos, this.tmpPose.yaw + Math.PI, 0, 4.2 + Math.sin(this.t * 1.1) * 0.6);
+    this.track.pose(p.s + 14, Math.sin(this.t * 0.5) * 3.5, this.tmpPose);
+    // bay cao hơn 2 vòng mây để luôn thấy Nữ hoàng
+    n.place(this.tmpPose.pos, this.tmpPose.yaw + Math.PI, 0, 4.6 + Math.sin(this.t * 1.1) * 0.6);
     n.run = 0.5;
     n.update(gdt, dt);
     if (this.night > 0.2 && Math.random() < dt * 10) {
@@ -805,45 +952,92 @@ export class Level {
   private tickFinal(gdt: number, dt: number): void {
     this.placeNmm(gdt, dt);
     const p = this.player;
-    if (this.busy || this.nmmHits >= 5) return;
-    if (p.s - this.lastTurnS > 52) { this.lastTurnS = p.s; void this.finalTurn(); }
+    const g = this.gate;
+    if (g) {
+      if (!g.choice) p.s = Math.min(p.s, g.s - 5);
+      if (g.choice && !g.passed && p.s > g.s + 2) {
+        g.passed = true;
+        const old = g;
+        void tween(600, (k) => { for (const r of old.rings) r.scale.setScalar(Math.max(0.01, 1 - k)); for (const s of old.signs) s.face.scale.setScalar(Math.max(0.01, 1.5 * (1 - k))); })
+          .then(() => this.disposeGate(old));
+        this.gate = null;
+        p.latGoal = 0;
+      }
+    }
+    if (this.busy || this.gate || this.nmmHits >= 5) return;
+    if (p.s - this.lastGateS > GATE_GAP) { this.lastGateS = p.s; void this.finalTurn(); }
+  }
+
+  private ringMat: THREE.MeshLambertMaterial | null = null;
+  private makeGate(slot: Slot): Gate {
+    const step = slot.q.steps[slot.si];
+    const mainDir = mainDirOf(step);
+    const s = this.player.s + 26;
+    if (!this.ringMat) this.ringMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffd6f5, emissiveIntensity: 0.5 });
+    const rings: THREE.Mesh[] = [], signs: LetterStar[] = [];
+    for (const [i, side] of [[0, -1], [1, 1]] as const) {
+      this.track.pose(s, side * 3.6, this.tmpPose);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.4, 8, 26), this.ringMat);
+      ring.position.copy(this.tmpPose.pos).add(new THREE.Vector3(0, 1.5, 0));
+      ring.rotation.y = this.tmpPose.yaw;
+      this.engine.scene.add(ring);
+      rings.push(ring);
+      const star = this.makeSign(step, step.choices[i]);
+      star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + 1.5, this.tmpPose.pos.z);
+      star.root.userData.side = side;
+      star.bobAmp = 0.05;
+      this.engine.scene.add(star.root);
+      void star.appear(80);
+      signs.push(star);
+    }
+    return { s, slot, signs, rings, choice: 0, mainDir, passed: false };
+  }
+  private disposeGate(g: Gate): void {
+    for (const r of g.rings) { r.removeFromParent(); r.geometry.dispose(); }
+    for (const s of g.signs) s.dispose();
   }
 
   private async finalTurn(): Promise<void> {
     this.busy = true;
     const n = this.nmm!;
-    const q = this.nextQ();
-    if (this.turn === 'nmm') {
-      this.talk('nightmare', bankLine('nmm_turn'));
-      const orb = this.launchOrb(n.center(), 0x8fb0ff, true);
-      const res = await this.ask(q, 'stars');
+    const slot = this.slots[this.slotI++ % this.slots.length];
+    const g = this.makeGate(slot);
+    this.gate = g;
+    const who = slot.first ? (this.turnWho = this.turnWho === 'me' ? 'nmm' : 'me', this.turnWho) : this.turnWho;
+    let orb: Orb | null = null;
+    if (slot.first) {
+      if (who === 'nmm') { this.talk('nightmare', bankLine('nmm_turn')); orb = this.launchOrb(n.center(), 0x8fb0ff, true); }
+      else this.talk('twilight', bankLine('my_turn'));
+    }
+    const dir = await this.ask(slot, g.signs, g.mainDir);
+    if (!this.alive || !dir) return;
+    g.choice = dir;
+    this.player.latGoal = dir * 3.6;
+    const ok = dir === g.mainDir;
+    if (who === 'nmm') {
+      if (orb) this.resolveOrb(orb, ok);
+      if (ok) { void this.player.pony.barrel(dir); this.talk(null, bankLine('dodge'), 300); }
+      this.afterAnswer(slot, ok, ok);
+    } else if (ok && slot.last) {
+      this.engine.slow(0.25);
+      sfx('sfx_zap', 0.5);
+      await this.engine.magic.beam(this.player.pony.horn(), n.center(), 0xffe08a, 0xff7ac8, 0.7);
       if (!this.alive) return;
-      this.resolveOrb(orb, res.ok);
-      if (res.ok) { void this.player.pony.barrel(this.rnd() < 0.5 ? 1 : -1); this.talk(null, bankLine('dodge'), 300); }
-      this.afterAnswer(q, res.ok, true);
+      this.engine.slow(1);
+      this.nmmHits++;
+      ui.setHarmony(this.nmmHits);
+      this.engine.magic.burst(n.center(), 80, 0xffffff, 3, 0.34, 1, -1);
+      void n.hit();
+      if (this.nmmHits < 5) this.talk('nightmare', bankLine('nmm_hurt'));
+      this.afterAnswer(slot, ok, this.nmmHits < 5);
+      if (this.nmmHits >= 5 && !this.over) { await this.climax(); return; }
     } else {
-      this.talk('twilight', bankLine('my_turn'));
-      const res = await this.ask(q, 'stars');
-      if (!this.alive) return;
-      if (res.ok) {
-        this.engine.slow(0.25);
-        sfx('sfx_zap', 0.5);
-        await this.engine.magic.beam(this.player.pony.horn(), n.center(), 0xffe08a, 0xff7ac8, 0.7);
-        if (!this.alive) return;
-        this.engine.slow(1);
-        this.nmmHits++;
-        ui.setHarmony(this.nmmHits);
-        this.engine.magic.burst(n.center(), 80, 0xffffff, 3, 0.34, 1, -1);
-        void n.hit();
-        if (this.nmmHits < 5) this.talk('nightmare', bankLine('nmm_hurt'));
-      } else {
+      if (!ok) {
         void this.engine.magic.beam(this.player.pony.horn(), n.center().add(new THREE.Vector3(3, 2, 0)), 0x9fb3d9, 0xffffff, 0.6);
         this.talk('nightmare', bankLine('laugh'));
       }
-      this.afterAnswer(q, res.ok, res.ok && this.nmmHits < 5);
-      if (this.nmmHits >= 5 && !this.over) { await this.climax(); return; }
+      this.afterAnswer(slot, ok, ok);
     }
-    this.turn = this.turn === 'me' ? 'nmm' : 'me';
     this.busy = false;
   }
 
@@ -862,7 +1056,6 @@ export class Level {
     await wait(900);
     await ui.flash(700);
     if (!this.alive) return;
-    // Nữ hoàng Bóng Đêm → bác Hanh (công chúa Luna), trời sáng
     const luna = await Pony.load(this.engine, 'bac-hanh', 'none');
     if (!this.alive) { luna.dispose(); return; }
     n.dispose();
@@ -880,153 +1073,6 @@ export class Level {
     this.end('win');
   }
 
-  // ================================================================== câu hỏi
-
-  private nextQ(): Question {
-    const q = this.qs[this.qi % this.qs.length];
-    this.qi++;
-    return q;
-  }
-
-  /**
-   * Hỏi 1 câu: chậm gần như dừng, hiện bảng + sao (hoặc 2 biển ở ngã rẽ), đọc câu hỏi, chờ bé chạm (không đếm giờ).
-   * Sai 1 lượt: sao lắc, đọc chữ / số bé vừa chạm, sao đúng sáng lên. Trả về đúng hết không (+ nhánh đã chọn ở ngã rẽ).
-   */
-  private async ask(q: Question, where: 'stars' | 'signs', fork?: Fork): Promise<{ ok: boolean; side?: number }> {
-    this.busy = true;
-    if (this.obSlow) { this.obSlow = null; ui.flyHint(false); }
-    this.engine.slow(0.035);
-    await this.talking;
-    if (!this.alive) return { ok: false };
-    ui.showPanel(q.panel, this.def.theme.fruit);
-    for (const k of q.intro) { await play(k); if (!this.alive) return { ok: false }; }
-    let ok = true;
-    let side: number | undefined;
-    let filled = 0;
-    for (let si = 0; si < q.steps.length; si++) {
-      const step = q.steps[si];
-      this.spawnChoices(step, where, fork);
-      for (const c of this.choices) void c.appear(80);
-      this.currentAsk = step.ask;
-      this.askAt = this.engine.time;
-      this.askRepeats = 0;
-      await play(step.ask);
-      if (!this.alive) return { ok: false };
-      if (!this.shownTapHint) { this.shownTapHint = true; void play(bankLine(where === 'signs' ? 'fork' : 'tap').key); }
-      const picked = await this.waitPick(step);
-      if (!this.alive || !picked) return { ok: false };
-      stopSpeech();
-      const good = this.isRight(picked, step);
-      if (where === 'signs') side = (picked.root.userData.side as number) ?? 1;
-      if (good) {
-        sfx('sfx_win', 0.45);
-        void picked.pop();
-      } else {
-        ok = false;
-        sfx('sfx_soft', 0.5);
-        void picked.wobble();
-        // đọc cái bé vừa chạm, rồi sáng sao đúng
-        const said = step.tone ? null : /^\d+$/.test(picked.label) ? numKey(+picked.label) : nameKey(picked.label);
-        if (said) await play(said);
-        const right = this.choices.find((c) => this.isRight(c, step));
-        if (right) { void right.pop(); this.engine.magic.burst(right.worldCenter(), 30, 0xffe08a, 2, 0.25, 0.7, -1); }
-        await wait(500);
-      }
-      if (!this.alive) return { ok: false };
-      if (q.panel.type === 'word') { filled = si + 1; ui.fillWord(q.panel.word, Math.min(filled, Array.from(q.panel.word).length)); if (step.tone) ui.showWord(q.panel.word); }
-      if (q.panel.type === 'eq') ui.solvePanel(step.answer);
-      // sao bay đi (biển ngã rẽ: giữ biển đã chọn thêm 1 chút)
-      for (const c of this.choices) void c.vanish(where === 'signs' && c === picked ? 900 : 300);
-      const old = this.choices;
-      setTimeout(() => this.disposeChoices(old), 1000);
-      this.choices = [];
-      this.currentAsk = null;
-    }
-    if (q.panel.type === 'word') ui.showWord(q.panel.word);
-    return { ok, side };
-  }
-
-  private isRight(s: LetterStar, step: Step): boolean {
-    return step.tone ? s.tone === step.answer : s.label === step.answer;
-  }
-
-  private waitPick(step: Step): Promise<LetterStar | null> {
-    return new Promise((resolve) => {
-      this.pickResolve = resolve;
-      setAnswer(`${step.tone ? 'tone' : 'pick'}:${step.answer}`, (good) => {
-        const s = this.choices.find((c) => this.isRight(c, step) === good);
-        if (s && this.pickResolve === resolve) { this.pickResolve = null; setAnswer(null, null); resolve(s); }
-      });
-      if (this.autoAnswer) setTimeout(() => {
-        const s = this.choices.find((c) => this.isRight(c, step));
-        if (s && this.pickResolve === resolve) { this.pickResolve = null; resolve(s); }
-      }, 700);
-    }).then((s) => { setAnswer(null, null); return s as LetterStar | null; });
-  }
-
-  private spawnChoices(step: Step, where: 'stars' | 'signs', fork?: Fork): void {
-    const p = this.player;
-    this.choices = step.choices.map((label, i) => {
-      const star = new LetterStar(step.tone ? { label: '', tone: label as ToneName, size: where === 'signs' ? 1.5 : 1.15 } : { label, size: where === 'signs' ? 1.5 : 1.15 });
-      if (where === 'signs' && fork) {
-        const side = i === 0 ? -1 : 1;
-        this.track.pose(fork.s0 + 7, side * 3.6, 0, this.tmpPose);
-        star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + 3.3, this.tmpPose.pos.z);
-        star.root.userData.side = side;
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.6, 8), new THREE.MeshLambertMaterial({ color: 0xc98d5e }));
-        post.position.y = 1.3;
-        star.root.add(post);
-        this.posts.push(post);
-      } else {
-        const n = step.choices.length;
-        const lat = (i - (n - 1) / 2) * 2.9;
-        this.track.pose(p.s + 7.5, lat, 0, this.tmpPose);
-        star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + p.y + 2.4, this.tmpPose.pos.z);
-      }
-      this.engine.scene.add(star.root);
-      return star;
-    });
-  }
-
-  private disposeChoices(list: LetterStar[]): void {
-    for (const c of list) {
-      c.root.traverse((o) => {
-        const i = this.posts.indexOf(o as THREE.Mesh);
-        if (i >= 0) { this.posts.splice(i, 1); (o as THREE.Mesh).geometry.dispose(); ((o as THREE.Mesh).material as THREE.Material).dispose(); }
-      });
-      c.dispose();
-    }
-  }
-
-  /**
-   * Sau mỗi câu: ghi ôn, trừ tim nếu sai, rồi (nối sau câu đang nói) khen / "chưa đúng" + đọc đáp án để bé học.
-   * `praised`: nơi gọi đã nói câu riêng (né được, trúng rồi, đường tắt…) → bỏ câu khen chung cho đỡ nói nhiều.
-   */
-  private afterAnswer(q: Question, ok: boolean, praised = false): void {
-    if (ok) markRight(this.progress, q.key);
-    else {
-      markWrong(this.progress, q.key);
-      this.wrong++;
-      this.hearts--;
-      ui.setHearts(this.hearts, HEARTS);
-      sfx('sfx_hurt', 0.5);
-    }
-    this.engine.slow(1);
-    const lose = this.hearts <= 0;
-    const prev = this.talking;
-    this.talking = (async () => {
-      await prev;
-      if (!this.alive) return;
-      if (!ok || !praised) await play(bankLine(ok ? 'ok' : 'no').key);
-      if (q.lit && q.learn.length) {
-        await speakSequence(q.learn, (i) => ui.litWord(q.lit![i] ?? null), 120);
-        ui.litWord(null);
-      } else for (const k of q.learn) await play(k);
-      ui.showPanel(null);
-    })();
-    if (lose) void this.lose();
-  }
-
   private async lose(): Promise<void> {
     if (this.over) return;
     this.over = true;
@@ -1042,7 +1088,6 @@ export class Level {
     this.loseFace = fam;
     this.end('lose');
   }
-  loseFace: FamilyId | null = null;
 
   // ================================================================== phép bay (quái / Nữ hoàng bắn)
 
@@ -1052,20 +1097,16 @@ export class Level {
     sprite.position.copy(from);
     this.engine.scene.add(sprite);
     sfx('sfx_charge', 0.4);
-    const orb: Orb = { sprite, from: from.clone(), u: 0, cap: cap ? 0.55 : 1, miss: null, hitPlayer: false, color, done: () => {} };
+    const orb: Orb = { sprite, from: from.clone(), u: 0, cap: cap ? 0.55 : 1, miss: null, hitPlayer: false, color };
     this.orbs.push(orb);
     return orb;
   }
 
-  /** Sau khi trả lời: phép bay tiếp — đúng thì trượt qua bên cạnh, sai thì trúng Nhím. */
+  /** Sau khi chọn: phép bay tiếp — đúng thì trượt qua bên cạnh, sai thì trúng Nhím. */
   private resolveOrb(o: Orb, dodged: boolean): void {
     o.cap = 1;
     o.hitPlayer = !dodged;
-    if (dodged) {
-      this.player.latGoal = (this.rnd() < 0.5 ? -1 : 1) * 2.6;
-      setTimeout(() => { if (this.alive) this.player.latGoal = 0; }, 900);
-      o.miss = this.player.center(new THREE.Vector3()).add(this.player.pose.right.clone().multiplyScalar(-this.player.latGoal * 0.6)).add(new THREE.Vector3(0, -1.6, 0));
-    }
+    if (dodged) o.miss = this.player.center(new THREE.Vector3()).add(this.player.pose.right.clone().multiplyScalar(-this.player.latGoal * 0.8)).add(new THREE.Vector3(0, -1.6, 0));
   }
 
   private updateOrbs(gdt: number): void {
@@ -1091,8 +1132,8 @@ export class Level {
 
   // ================================================================== lời nói, HUD, camera
 
-  /** Nói 1 câu không chặn (không chen câu hỏi đang chờ). */
-  private talk(who: CastId | null, line: { key: string; text: string; voice?: string }, delayMs = 0): void {
+  /** Nói 1 câu không chặn, nối sau câu đang nói (không chen câu hỏi). */
+  private talk(who: CastId | null, line: { key: string; text: string }, delayMs = 0): void {
     const prev = this.talking;
     this.talking = (async () => {
       await prev;
@@ -1108,13 +1149,13 @@ export class Level {
 
   private updateHud(): void {
     if (!this.player) return;
-    const d = this.def, p = this.player;
+    const d = this.def;
     if (d.mode === 'race' || d.mode === 'chase') {
-      const L = this.track.length - 14;
-      const marks: ui.BarMark[] = [{ id: 'me', frac: p.s / L, who: 'twilight', me: true }];
+      const L = this.track.length - 14, ms = this.mainS;
+      const marks: ui.BarMark[] = [{ id: 'me', frac: ms / L, who: 'twilight', me: true }];
       this.racers.forEach((r, i) => marks.push({ id: `r${i}`, frac: r.s / L, who: r.pony.id }));
       if (d.mode === 'chase' && this.chasers.length) marks.push({ id: 'm', frac: Math.min(...this.chasers.map((c) => c.s)) / L, emoji: '👾' });
-      ui.setBar(p.s / L, marks);
+      ui.setBar(ms / L, marks);
     } else ui.setBar(0, null);
     if (d.mode === 'hunt') {
       const t = this.target;
@@ -1130,10 +1171,11 @@ export class Level {
     this.camYaw += d * Math.min(1, dt * 2.6);
     const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
     const base = this.tmpV.copy(p.pose.pos);
-    base.y += p.y * 0.55 + (p.alwaysFly ? 0 : 0);
-    const cfg = { race: [8.2, 3.7, 7], chase: [12, 6, 2], hunt: [8.6, 3.9, 9], final: [9, 3.0, 8] }[this.def.mode] as [number, number, number];
+    base.y += p.y * 0.55;
+    const cfg = { race: [8.2, 3.9, 9], chase: [12, 6, 3], hunt: [8.6, 4.0, 10], final: [9, 3.0, 8] }[this.def.mode] as [number, number, number];
     let [dist, h, look] = cfg;
-    if (this.busy && this.choices.length) { dist *= 0.92; h += 0.5; }
+    // đang hỏi ở ngã rẽ: lùi + nâng camera để thấy rõ 2 biển
+    if (this.pickResolve) { dist *= 1.1; h += 1.2; look += 3; }
     const desired = new THREE.Vector3();
     const lookAt = new THREE.Vector3();
     if (this.camMode === 'front') {
@@ -1170,16 +1212,16 @@ export class Level {
     this.started = false;
     stopSpeech();
     setAnswer(null, null);
-    if (this.pickResolve) { const r = this.pickResolve; this.pickResolve = null; r(null); }
+    if (this.pickResolve) { const r = this.pickResolve; this.pickResolve = null; r(0); }
     this.resolveEnd('quit');
     this.engine.slow(1);
     this.engine.timeScale = 1;
     this.engine.magic.setAdditive(false);
-    ui.flyHint(false);
-    ui.runHint(false);
+    ui.keyHint(null);
     ui.showPanel(null);
-    this.disposeChoices(this.choices);
-    this.choices = [];
+    for (const j of this.junctions) { this.disposeSigns(j.signs); j.mon?.dispose(); }
+    if (this.gate) this.disposeGate(this.gate);
+    this.ringMat?.dispose();
     for (const o of this.orbs) { o.sprite.removeFromParent(); o.sprite.material.dispose(); }
     this.orbs = [];
     this.player?.pony.dispose();

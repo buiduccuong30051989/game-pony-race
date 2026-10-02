@@ -39,7 +39,7 @@ export const LINES: Record<string, [Voice, string]> = {
   rotate: ['my', 'Nhím ơi, xoay ngang máy nhé!'],
 
   // ---- mở đầu từng bài
-  lv_1_1: ['nar', 'Rừng nấm. Hôm nay Nhím đua cùng cả nhà! Giữ nút để chạy, gặp chướng ngại thì bay lên nhé.'],
+  lv_1_1: ['nar', 'Rừng nấm. Hôm nay Nhím đua cùng cả nhà!'],
   lv_1_2: ['nar', 'Ối! Quái bóng tối trong rừng đuổi theo Nhím! Chạy mau tới cổng an toàn nào!'],
   lv_2_1: ['nar', 'Làng ngựa nhỏ {Ponyville}. Cả nhà đua qua làng nào!'],
   lv_2_2: ['nar', 'Yêu tinh và rồng nhỏ bắt bạn {Pinkie Pie} với bạn {Fluttershy} trong bong bóng! Đuổi theo cứu bạn nào!'],
@@ -49,7 +49,10 @@ export const LINES: Record<string, [Voice, string]> = {
   lv_4_2: ['nar', 'Phù thuỷ bắt bạn {Cadance} và bạn Cầu Vồng! Đuổi theo cứu bạn nào!'],
   lv_final: ['nar', 'Bầu trời đêm. Nữ hoàng Bóng Đêm đang chờ Nhím ở trên cao!'],
   final_2: ['nmm', 'Ha ha ha! Đấu với ta trên trời nào, cô bé!'],
-  final_3: ['my', 'Trả lời đúng để né phép, và bắn phép vào Nữ hoàng nhé!'],
+  final_3: ['my', 'Bay qua vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!'],
+  keys: ['my', 'Giữ nút lên để chạy. Nháy nút lên hai lần để bay. Tới ngã rẽ thì bấm nút trái hoặc nút phải nhé!'],
+  fly_teach: ['my', 'Có chướng ngại kìa! Nháy nhanh nút lên hai lần để bay qua nhé!'],
+  turn_teach: ['my', 'Đáp án nằm trên biển ở đầu mỗi đường. Bấm nút trái hoặc nút phải để chọn đường nhé!'],
 
   // ---- bị đuổi / đuổi quái
   wave: ['my', 'Ôi, nhiều quái quá! Trả lời đúng hai câu để bật khiên phép thuật!'],
@@ -84,27 +87,32 @@ export const LINES: Record<string, [Voice, string]> = {
   wcard_4: ['nar', 'Nhím đã tới thành phố lâu đài!'],
 };
 
-/** Câu riêng của từng người nhà khi đua: chào, vượt lên, chờ Nhím, Nhím thắng, mình về trước, động viên khi thua. */
-export const FAMILY_LINES: Record<FamilyId, Record<'hi' | 'ahead' | 'wait' | 'win' | 'first' | 'lose', string>> = {
+/** Câu riêng của từng người nhà khi đua: chào, vượt lên, chờ Nhím, Nhím thắng, mình về trước, động viên khi thua, gọi Nhím quay lại khi rẽ nhầm. */
+export const FAMILY_LINES: Record<FamilyId, Record<'hi' | 'ahead' | 'wait' | 'win' | 'first' | 'lose' | 'back', string>> = {
   'ba-cuong': {
     hi: 'Nhím ơi, đua với ba nào! Ba nhanh như tia chớp đó!', ahead: 'Ba vượt lên nè!', wait: 'Nhím ơi, chạy tiếp đi con!',
     win: 'Nhím về nhất rồi! Con gái ba giỏi quá!', first: 'Ba về trước rồi! Lần sau Nhím thắng ba nhé!', lose: 'Không sao con ơi, mình thử lại nhé! Ba tin con!',
+    back: 'Nhím ơi, quay lại! Đường bên này cơ con!',
   },
   'me-yen': {
     hi: 'Nhím đua với mẹ nhé! Cố lên con yêu!', ahead: 'Mẹ ở đằng trước nè Nhím!', wait: 'Mẹ chờ Nhím nè!',
     win: 'Nhím về nhất! Mẹ thương Nhím nhất!', first: 'Mẹ về trước rồi! Lần sau Nhím thắng mẹ nha!', lose: 'Suýt nữa thôi con! Mình chơi lại nhé!',
+    back: 'Nhím ơi, quay lại đây con! Đường này mới đúng!',
   },
   'ong-cuong': {
     hi: 'Ông cũng đua với cháu nhé! Ông chạy khoẻ lắm!', ahead: 'Ông vượt lên rồi nhé!', wait: 'Cháu ông chạy tiếp nào!',
     win: 'Cháu ông về nhất! Giỏi quá!', first: 'Ông về trước rồi! Lần sau cháu thắng ông nhé!', lose: 'Không sao cháu ơi, thử lại nào!',
+    back: 'Cháu ơi, quay lại! Đi đường này với ông!',
   },
   'ba-tuyet': {
     hi: 'Bà đua cùng Nhím đây! Bà bay nhẹ như mây!', ahead: 'Bà bay lên trước rồi nè!', wait: 'Bà chờ Nhím nhé!',
     win: 'Nhím về nhất! Bà vui quá!', first: 'Bà về trước rồi! Lần sau Nhím thắng bà nhé!', lose: 'Suýt nữa thôi cháu yêu! Mình thử lại nhé!',
+    back: 'Nhím ơi, quay lại! Bà ở đường bên này nè!',
   },
   'bac-hanh': {
     hi: 'Bác Hanh đua với Nhím nhé!', ahead: 'Bác vượt lên rồi nè!', wait: 'Nhím ơi, bác chờ nè!',
     win: 'Nhím về nhất! Bác tự hào lắm!', first: 'Bác về trước rồi! Lần sau Nhím thắng bác nhé!', lose: 'Không sao Nhím ơi, mình chơi lại nào!',
+    back: 'Nhím ơi, quay lại! Đường đúng ở đây nè!',
   },
 };
 export const familyKey = (id: FamilyId, k: string) => `f_${id.replace('-', '')}_${k}`;
@@ -120,12 +128,10 @@ export const BANK_TEXT: Record<string, [Voice, string[]]> = {
     'Gần đúng rồi! Nghe nè:', 'Không sao, mình học nhé:',
   ]],
   hold: ['my', [
-    'Giữ nút để chạy nào!', 'Nhím ơi, giữ nút ngựa để chạy nhé!', 'Chạy tiếp thôi Nhím!', 'Giữ ngón tay trên nút là chạy đó!',
-    'Mình chạy tiếp nhé!', 'Đường đua đang chờ Nhím đó!', 'Nhấn giữ nút để phi nhanh nào!', 'Cố lên Nhím, chạy nào!',
+    'Giữ nút lên để chạy nào!', 'Nhím ơi, giữ nút lên để chạy nhé!', 'Chạy tiếp thôi Nhím!', 'Giữ nút mũi tên lên là chạy đó!', 'Mình chạy tiếp nhé!', 'Đường đua đang chờ Nhím đó!', 'Giữ nút lên để phi nhanh nào!', 'Cố lên Nhím, chạy nào!'
   ]],
   fly: ['my', [
-    'Bay lên nào!', 'Chạm đôi cánh để bay qua!', 'Có chướng ngại kìa! Bay lên!', 'Vỗ cánh bay qua nhé!', 'Bay qua đi Nhím!',
-    'Chạm nút cánh nào!', 'Ối, cái gì chắn đường kìa! Bay lên!', 'Nhím ơi, bay lên!',
+    'Nháy nút lên hai lần để bay nào!', 'Bay lên nào! Nháy hai lần nhé!', 'Có chướng ngại kìa! Nháy nút lên hai lần!', 'Nháy nhanh hai lần để bay qua nhé!', 'Bay qua đi Nhím! Nháy hai lần!', 'Nhím ơi, nháy nút lên hai lần nào!'
   ]],
   flyok: ['my', [
     'Vèo! Bay qua rồi!', 'Giỏi quá, bay cao ghê!', 'Bay đẹp quá!', 'Qua rồi!', 'Nhím bay như chim!', 'Hay lắm!',
@@ -134,33 +140,14 @@ export const BANK_TEXT: Record<string, [Voice, string[]]> = {
     'Ối, vấp rồi! Không sao, chạy tiếp nào!', 'Úi! Đứng dậy chạy tiếp nhé!', 'Lộn một vòng rồi! Chạy tiếp thôi!',
     'Không sao, lần sau bay lên nhé!', 'Ui da! Mình chạy tiếp nào!',
   ]],
-  fork: ['my', [
-    'Chạm vào biển đường đúng nhé!', 'Đường nào đây ta?', 'Chọn một biển nhé Nhím!', 'Ngã rẽ kìa! Chạm biển đúng nào!',
-    'Đường tắt cầu vồng ở bên nào nhỉ?', 'Nhím chọn đường nào?',
-  ]],
-  tap: ['my', [
-    'Chạm vào ngôi sao đúng nhé!', 'Ngôi sao nào đây ta?', 'Chạm nhẹ vào ngôi sao nào!', 'Nhím chọn ngôi sao nào?',
-    'Ngôi sao đang chờ Nhím chạm đó!', 'Thử chạm một ngôi sao xem!',
-  ]],
   boost: ['my', [
     'Đường tắt cầu vồng! Nhanh quá!', 'Vút! Nhím vượt lên rồi!', 'Cầu vồng đẩy Nhím bay vèo!', 'Nhanh như gió!', 'Vượt lên nào!',
-  ]],
-  mud: ['my', [
-    'Ôi, đường này lầy quá! Cố lên!', 'Đường vòng rồi, chạy tiếp nào!', 'Bì bõm! Chạy chậm một chút thôi!', 'Đường bùn rồi, không sao!',
-  ]],
-  attack: ['my', [
-    'Quái bắn phép kìa! Trả lời đúng để né nhé!', 'Cẩn thận! Phép bóng tối bay tới!', 'Ối, quái bắn phép! Trả lời nhanh nào!',
-    'Phép tím bay tới kìa! Né đi Nhím!', 'Quái làm phép rồi! Trả lời đúng là né được!',
   ]],
   dodge: ['my', [
     'Né được rồi!', 'Vèo, trượt rồi nhé!', 'Phép không trúng Nhím!', 'Né giỏi quá!', 'Hụt rồi, quái ơi!', 'Nhím nhanh hơn phép!',
   ]],
   ouch: ['my', [
     'Ối, trúng phép rồi!', 'Úi da! Cố lên Nhím!', 'Trúng rồi, nhưng Nhím vẫn chạy tiếp!', 'Ối! Mất một trái tim rồi!',
-  ]],
-  near: ['my', [
-    'Đuổi kịp rồi! Trả lời đúng để bắn phép!', 'Sắp bắt được rồi! Làm phép nào!', 'Quái ở ngay trước mặt! Trả lời nào!',
-    'Gần lắm rồi! Bắn phép thôi!',
   ]],
   zap: ['my', [
     'Trúng rồi!', 'Phép của Nhím mạnh quá!', 'Bùm! Trúng quái rồi!', 'Hay lắm! Trúng ngay!', 'Phép sáng quá!',
@@ -171,6 +158,18 @@ export const BANK_TEXT: Record<string, [Voice, string[]]> = {
   purify: ['my', [
     'Bóng tối tan rồi! Bạn ấy vui lại rồi!', 'Nhìn kìa, bạn ấy hết buồn rồi!', 'Bạn ấy về phe mình rồi!', 'Hoan hô! Bóng tối chạy mất rồi!',
     'Bạn ấy đang nhảy múa kìa!', 'Hết bị bóng tối nhập rồi!',
+  ]],
+  escape: ['my', [
+    'Thoát rồi! Quái tụt lại phía sau!', 'Đúng đường rồi! Chạy mau!', 'Quái đuổi không kịp rồi!', 'Hay lắm, bỏ xa quái rồi!', 'Đường đúng rồi, chạy tiếp nào!'
+  ]],
+  deadend: ['my', [
+    'Ôi, đường cụt rồi!', 'Ối, đá chắn đường rồi!', 'Đường này không đi được rồi!', 'Hết đường rồi Nhím ơi!'
+  ]],
+  stubmon: ['my', [
+    'Ối, có quái ở đây! Quay lại thôi!', 'Úi, quái bóng tối trốn ở đây! Chạy ra thôi!', 'Ối, đường này có quái! Quay lại nào!'
+  ]],
+  back: ['my', [
+    'Nhím ơi, quay lại! Đường đúng ở bên kia!', 'Quay lại ngã rẽ nào, đi đường bên kia nhé!', 'Mình quay lại đi đường đúng nhé!'
   ]],
   laugh: ['nmm', [
     'Hô hô hô! Chưa đúng rồi!', 'Hi hi! Thử lại đi nào!', 'Ha ha! Bóng tối tiến lên!', 'Hừm hừm, sai rồi nhé!',

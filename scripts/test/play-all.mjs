@@ -29,8 +29,8 @@ async function one(id) {
     if (st.w) {
       const ok = how === 'right' || (how === 'mixed' && answered > 0);
       await page.waitForTimeout(250);
-      await page.evaluate((ok) => window.__game.answer(ok), ok);
-      answered++;
+      // chỉ đếm khi game thật sự nhận câu trả lời (máy chậm có thể đọc `waiting` cũ)
+      if (await page.evaluate((ok) => window.__game.answer(ok), ok)) answered++;
     }
     const key = `${Math.floor(st.s)}|${st.w}|${st.hearts}`;
     if (key !== last) { last = key; lastChange = Date.now(); }

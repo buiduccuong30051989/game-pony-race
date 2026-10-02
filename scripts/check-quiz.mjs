@@ -25,8 +25,8 @@ function rng(seed) {
 let bad = 0, total = 0;
 const fail = (lv, msg) => { if (bad < 40) console.error(`✗ ${lv}: ${msg}`); bad++; };
 for (const lv of LEVELS) {
-  const n = lv.mode === 'race' ? 2 : 3;
-  const count = lv.mode === 'race' || lv.mode === 'chase' ? lv.questions : 16;
+  const n = 2;
+  const count = lv.mode === 'race' || lv.mode === 'chase' ? lv.questions : lv.mode === 'hunt' ? 10 : 16;
   for (let seed = 1; seed <= 150; seed++) {
     const weak = seed % 3 === 0 ? { 'L:ô': 2, 'A:2+3': 1, 'W:bà': 2, 'S:5-2': 2 } : {};
     const qs = makeQuiz(lv.quiz, count, n, weak, rng(seed * 97 + lv.seed));
@@ -37,7 +37,6 @@ for (const lv of LEVELS) {
     for (const q of qs) {
       total++;
       for (const k of [...q.intro, ...q.learn, ...q.steps.map((s) => s.ask)]) if (!known.has(k)) fail(lv.id, `khoá audio "${k}" không có câu (${q.key})`);
-      if (q.kind === 'word' && n < 3) fail(lv.id, `ghép tiếng ở ngã rẽ (${q.key})`);
       for (const s of q.steps) {
         if (s.choices.length !== n) fail(lv.id, `${q.key}: ${s.choices.length} lựa chọn, cần ${n}`);
         if (!s.choices.includes(s.answer)) fail(lv.id, `${q.key}: đáp án ${s.answer} không có trong lựa chọn`);

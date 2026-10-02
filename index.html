@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ffe9f4" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏇%3C/text%3E%3C/svg%3E" />
+  <title>Nhím phi nước đại</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #ffe9f4; --ink: #3b3220; --magic: #a06cd5; --pink: #ff5fa8; --gold: #ffd166; --card: #fffaf0; --success: #58cc02; --error: #da5e4e;
+      --shadow: 0 6px 0 rgba(59, 50, 32, .18);
+      --safe-l: max(14px, env(safe-area-inset-left)); --safe-r: max(14px, env(safe-area-inset-right));
+      --safe-t: max(12px, env(safe-area-inset-top)); --safe-b: max(14px, env(safe-area-inset-bottom));
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+    body { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; overscroll-behavior: none; }
+    #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .big { appearance: none; border: 5px solid var(--ink); border-radius: 999px; background: #fff; width: 92px; height: 92px; font: inherit; font-size: 46px; line-height: 1; cursor: pointer;
+      box-shadow: var(--shadow); display: grid; place-items: center; color: var(--ink); touch-action: none; transition: transform .1s ease, box-shadow .1s ease, background .1s ease; }
+    .big:active, .big.down { transform: translateY(4px); box-shadow: 0 2px 0 rgba(59, 50, 32, .18); }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    /* HUD */
+    #hud { position: fixed; top: var(--safe-t); left: var(--safe-l); right: calc(var(--safe-r) + 96px); display: flex; gap: 12px; align-items: center; z-index: 5; pointer-events: none; }
+    .pill { background: var(--card); border: 4px solid var(--ink); border-radius: 999px; padding: 2px 16px; font-size: 26px; font-weight: 800; box-shadow: var(--shadow); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+    #me-badge { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #fff; box-shadow: 0 0 0 4px var(--magic), var(--shadow); overflow: hidden; flex: none; background: #f1e6ff; }
+    #me-badge img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #hearts span { font-size: 30px; transition: transform .3s, filter .3s, opacity .3s; display: inline-block; }
+    #hearts span.off { filter: grayscale(1); opacity: .35; transform: scale(.8); }
+    #hearts span.lost { animation: heartLost .6s ease; }
+    @keyframes heartLost { 0% { transform: scale(1.6) rotate(-12deg); } 100% { transform: scale(.8); } }
+    #gems.bump { animation: bump .35s ease; }
+    @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    #bar { flex: 1; min-width: 160px; height: 28px; position: relative; background: rgba(255,255,255,.75); border: 4px solid var(--ink); border-radius: 999px; box-shadow: var(--shadow); }
+    #bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, #ffb3d9, #b28cff); }
+    #bar .flag { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); font-size: 30px; }
+    #bar .mk { position: absolute; top: 50%; width: 40px; height: 40px; margin-left: -20px; transform: translateY(-50%); border-radius: 50%; border: 3px solid #fff; background: #fff; overflow: hidden; box-shadow: 0 2px 0 rgba(0,0,0,.2);
+      display: grid; place-items: center; font-size: 24px; transition: left .15s linear; }
+    #bar .mk img { width: 100%; height: 100%; object-fit: cover; }
+    #bar .mk.me { width: 48px; height: 48px; margin-left: -24px; z-index: 2; border-color: var(--magic); }
+    #harmony span { font-size: 34px; opacity: .3; filter: grayscale(.8); transition: all .3s; display: inline-block; }
+    #harmony span.on { opacity: 1; filter: drop-shadow(0 0 8px #fff) saturate(1.4); transform: scale(1.25); }
+    #target { gap: 4px; }
+    #target span { font-size: 28px; }
+    #target span.off { opacity: .25; filter: grayscale(1); }
+    #home { position: fixed; z-index: 6; top: var(--safe-t); right: var(--safe-r); width: 76px; height: 76px; font-size: 36px; }
+
+    /* nút chạy (giữ) + nút bay */
+    #run-btn { position: fixed; z-index: 5; right: calc(var(--safe-r) + 6px); bottom: calc(var(--safe-b) + 6px); width: 168px; height: 168px; font-size: 84px;
+      background: radial-gradient(circle at 40% 35%, #ffe0f0, var(--pink)); border-color: #b83b7d; }
+    #run-btn.down { background: radial-gradient(circle at 40% 35%, #fff, #ff86c2); }
+    #run-btn.hint { animation: pulse 1s ease-in-out infinite; }
+    #run-btn small { position: absolute; top: -38px; left: 0; right: 0; font-size: 22px; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #b83b7d; text-align: center; }
+    #fly-btn { position: fixed; z-index: 5; left: calc(var(--safe-l) + 6px); bottom: calc(var(--safe-b) + 6px); width: 150px; height: 150px; font-size: 76px;
+      background: radial-gradient(circle at 40% 35%, #fff, #bfe6ff); border-color: #1a7fbf; }
+    #fly-btn.hint { animation: pulse .7s ease-in-out infinite; box-shadow: 0 0 0 10px rgba(255,209,102,.8), 0 0 40px 14px rgba(255,209,102,.9); }
+    #fly-btn.cool { opacity: .5; }
+
+    /* bảng câu hỏi */
+    #panel { position: fixed; z-index: 7; top: calc(var(--safe-t) + 96px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px;
+      background: linear-gradient(180deg, #fffdf6, #fff0d6); border: 6px solid #fff; border-radius: 34px; padding: 8px 18px 8px 24px; box-shadow: 0 8px 0 rgba(80,40,140,.25), 0 0 0 5px var(--magic); }
+    #panel.in { animation: panelIn .35s ease both; }
+    @keyframes panelIn { from { transform: translateX(-50%) scale(.6); opacity: 0; } }
+    #panel-body { display: flex; align-items: center; gap: 14px; font-size: clamp(44px, 6vw, 70px); font-weight: 800; line-height: 1; color: #3b2a5a; }
+    .eq-n { display: flex; flex-direction: column; align-items: center; min-width: 1.1em; }
+    .eq-n small { font-size: clamp(14px, 1.8vw, 22px); letter-spacing: -2px; line-height: 1.1; max-width: 5.5em; text-align: center; white-space: normal; word-break: break-all; }
+    .eq-n small i { font-style: normal; display: inline-block; }
+    .eq-n small i.x { opacity: .35; position: relative; }
+    .eq-n small i.x::after { content: '✕'; position: absolute; left: 0; right: 0; color: var(--error); font-size: .9em; }
+    .eq-q { color: var(--pink); animation: pulse 1s ease-in-out infinite; }
+    .eq-op { color: var(--magic); }
+    .listen { font-size: clamp(54px, 7vw, 80px); animation: hop 1.2s ease-in-out infinite; }
+    .word-emoji { font-size: clamp(54px, 7vw, 80px); }
+    .slot { display: inline-grid; place-items: center; min-width: .9em; height: 1.15em; border-bottom: 6px solid var(--magic); margin: 0 4px; color: #3b2a5a; }
+    .slot.lit { color: var(--pink); transform: scale(1.15); transition: transform .15s; }
+    #repeat { width: 76px; height: 76px; font-size: 36px; flex: none; }
+
+    /* đếm ngược */
+    #countdown { position: fixed; inset: 0; z-index: 9; display: grid; place-items: center; pointer-events: none; }
+    #countdown b { font-size: min(34vw, 260px); font-weight: 800; color: #fff; -webkit-text-stroke: 8px var(--pink); text-shadow: 0 10px 0 rgba(160,40,110,.3); animation: cd .8s ease both; }
+    @keyframes cd { 0% { transform: scale(2.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
+
+    /* phụ đề */
+    #subtitle { position: fixed; z-index: 8; left: 50%; bottom: calc(var(--safe-b) + 14px); transform: translateX(-50%); width: min(760px, calc(100vw - 2 * 190px)); display: flex; gap: 12px; align-items: center;
+      background: rgba(255,253,246,.96); border: 5px solid var(--sc, #a06cd5); border-radius: 26px; padding: 8px 18px 8px 10px; box-shadow: 0 6px 0 rgba(59,50,32,.18); pointer-events: none; }
+    #subtitle.in { animation: subIn .3s ease both; }
+    @keyframes subIn { from { transform: translateX(-50%) translateY(30px); opacity: 0; } }
+    #subtitle.dark { background: #2e2266; color: #f3eaff; }
+    .sub-ava { width: 66px; height: 66px; border-radius: 50%; border: 4px solid; background: #fff; overflow: hidden; flex: none; display: grid; place-items: center; font-size: 36px; position: relative; }
+    .sub-ava img:first-child { width: 100%; height: 100%; object-fit: cover; }
+    .sub-ava.narr { background: #f6eaff; }
+    .sub-body { display: flex; flex-direction: column; font-size: clamp(19px, 2.3vw, 26px); font-weight: 800; line-height: 1.15; min-width: 0; }
+    .sub-body b { font-size: .75em; color: var(--sc); }
+    .ava-photo { position: absolute; right: -6px; bottom: -6px; width: 44%; height: 44%; border-radius: 50%; border: 3px solid #fff; object-fit: cover; }
+
+    /* overlay chung */
+    .overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; }
+    #start { z-index: 30; background: radial-gradient(ellipse at 50% 30%, #fff6fb, #ffd2ea 55%, #c9b6ff); transition: opacity .5s; }
+    #start.hide { opacity: 0; pointer-events: none; }
+    .start-box { display: flex; flex-direction: column; align-items: center; }
+    #start h1 { margin: 0 0 24px; font-size: clamp(48px, 8vw, 96px); color: #fff; -webkit-text-stroke: 3px var(--pink); text-shadow: 0 8px 0 rgba(200,60,140,.3); text-align: center; line-height: 1.02; }
+    #start-btn { width: 200px; height: 200px; font-size: 110px; background: radial-gradient(circle at 40% 35%, #ffe0f0, var(--pink)); border-color: #b83b7d; opacity: .5; }
+    #start-btn.ready { opacity: 1; animation: pulse 1.4s ease-in-out infinite; }
+    #start p { font-size: 26px; font-weight: 800; color: #b83b7d; margin-top: 22px; }
+
+    /* bản đồ */
+    #map { background: linear-gradient(180deg, #8fd3ff 0%, #d9c6ff 55%, #ffd9ec 100%); padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l); }
+    .map-box { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+    #map h1 { display: flex; align-items: center; gap: 14px; margin: 0; font-size: clamp(32px, 4.6vw, 52px); color: #fff; -webkit-text-stroke: 2px #b83b7d; text-shadow: 0 5px 0 rgba(160,40,110,.3); }
+    #map-hero { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; overflow: hidden; background: #f1e6ff; }
+    #map-hero img { width: 100%; height: 100%; object-fit: cover; }
+    #map-worlds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; width: min(1120px, 96vw); }
+    .w-card { border: 6px solid #fff; border-radius: 30px; padding: 12px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: linear-gradient(180deg, #fffaf0, var(--wc));
+      box-shadow: 0 8px 0 rgba(80,40,140,.25); animation: cardIn .5s calc(var(--i) * .08s) both; }
+    @keyframes cardIn { from { transform: translateY(30px); opacity: 0; } }
+    .w-card .w-emoji { font-size: 54px; line-height: 1; }
+    .w-card strong { font-size: clamp(20px, 2.3vw, 27px); line-height: 1.05; text-align: center; }
+    .lv-btn { appearance: none; width: 100%; border: 5px solid var(--ink); border-radius: 22px; background: #fff; font: inherit; font-weight: 800; font-size: clamp(17px, 1.9vw, 22px); cursor: pointer;
+      display: flex; align-items: center; gap: 8px; padding: 6px 10px; box-shadow: var(--shadow); color: var(--ink); text-align: left; position: relative; line-height: 1.1; }
+    .lv-btn:active { transform: translateY(3px); }
+    .lv-btn .ic { font-size: 34px; flex: none; }
+    .lv-btn.locked { opacity: .45; filter: grayscale(.8); cursor: default; }
+    .lv-btn.done::after { content: '⭐'; position: absolute; right: -12px; top: -16px; font-size: 32px; }
+    .lv-btn.next { animation: pulse 1.5s ease-in-out infinite; border-color: var(--pink); }
+    #map-final { appearance: none; border: 6px solid #fff; border-radius: 30px; padding: 10px 26px; font: inherit; font-weight: 800; font-size: clamp(22px, 2.6vw, 30px); color: #fff; cursor: pointer;
+      background: linear-gradient(90deg, #3a3a96, #9a86e0, #3a3a96); box-shadow: 0 8px 0 rgba(40,30,90,.35); display: flex; gap: 12px; align-items: center; position: relative; }
+    #map-final.locked { filter: grayscale(.7); opacity: .6; cursor: default; }
+    #map-final.done::after { content: '⭐'; position: absolute; right: -14px; top: -18px; font-size: 40px; }
+    #map-final.next { animation: pulse 1.5s ease-in-out infinite; }
+    .map-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    #map-gems { background: rgba(255,255,255,.85); }
+    .cos { display: flex; gap: 6px; align-items: center; font-size: 22px; }
+    .cos.off { opacity: .45; filter: grayscale(1); }
+
+    /* kết quả */
+    #result { z-index: 22; background: radial-gradient(ellipse at 50% 40%, rgba(255,246,251,.95), rgba(201,182,255,.92)); }
+    #result.lose { background: radial-gradient(ellipse at 50% 40%, rgba(255,250,240,.95), rgba(190,200,240,.92)); }
+    .res-box { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 94vw; }
+    #res-title { margin: 0; font-size: clamp(42px, 6.4vw, 78px); color: #fff; -webkit-text-stroke: 3px var(--pink); text-shadow: 0 6px 0 rgba(200,60,140,.3); text-align: center; line-height: 1.05; }
+    #result.lose #res-title { -webkit-text-stroke-color: #6f7fc8; text-shadow: 0 6px 0 rgba(60,70,140,.3); }
+    .res-mid { display: flex; gap: 26px; align-items: center; }
+    #res-photo { height: min(42vh, 360px); aspect-ratio: 3/4; object-fit: cover; border-radius: 22px; border: 10px solid #fff; box-shadow: 0 0 0 6px var(--gold), 0 0 40px rgba(255,209,102,.8); transform: rotate(-3deg); background: #f1e6ff; }
+    #res-faces { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 520px; }
+    .res-ava { width: 92px; height: 92px; border-radius: 50%; border: 5px solid; background: #fff; overflow: hidden; display: grid; place-items: center; font-size: 50px; position: relative; animation: hop 1s ease-in-out infinite alternate; }
+    .res-ava img:first-child { width: 100%; height: 100%; object-fit: cover; }
+    .res-ava:nth-child(2) { animation-delay: .2s; } .res-ava:nth-child(3) { animation-delay: .4s; } .res-ava:nth-child(4) { animation-delay: .6s; }
+    #res-place { font-size: clamp(26px, 3vw, 36px); font-weight: 800; color: #6f3fa8; text-align: center; }
+    #res-gems { font-size: 30px; }
+    .res-btns { display: flex; gap: 22px; }
+    .res-btns .big { width: 120px; height: 120px; font-size: 60px; }
+    #res-retry { background: radial-gradient(circle at 40% 35%, #fff, #ffd166); border-color: #b98a00; width: 150px !important; height: 150px !important; font-size: 76px !important; animation: pulse 1.4s ease-in-out infinite; }
+    #res-next { background: radial-gradient(circle at 40% 35%, #fff, #9ff0a4); border-color: #3f9500; animation: pulse 1.4s ease-in-out infinite; }
+
+    #toast { position: fixed; z-index: 25; top: 22%; left: 50%; transform: translateX(-50%); background: #fff; border: 5px solid var(--gold); border-radius: 26px; padding: 8px 26px; font-size: 32px; font-weight: 800;
+      box-shadow: 0 8px 0 rgba(0,0,0,.15); pointer-events: none; opacity: 0; }
+    #toast.show { animation: toast 2.6s ease both; }
+    @keyframes toast { 0% { opacity: 0; transform: translateX(-50%) scale(.6); } 12%, 85% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 0; } }
+    #flash { position: fixed; inset: 0; z-index: 19; background: #fff; pointer-events: none; opacity: 0; transition: opacity .35s; }
+    #confetti { position: fixed; inset: 0; z-index: 21; pointer-events: none; overflow: hidden; }
+    #confetti i { position: absolute; top: -40px; font-style: normal; font-size: 34px; animation: fall linear forwards; }
+    @keyframes fall { to { transform: translateY(115vh) rotate(720deg); } }
+
+    #rotate { display: none; z-index: 50; background: linear-gradient(180deg, #c9b6ff, #ffd9ec); flex-direction: column; gap: 20px; font-size: 32px; font-weight: 800; color: #6f3fa8; text-align: center; padding: 30px; }
+    #rotate div { font-size: 120px; animation: spinHint 2s ease-in-out infinite; }
+    @keyframes spinHint { 0%,30% { transform: rotate(0); } 60%,100% { transform: rotate(-90deg); } }
+    @media (orientation: portrait) and (max-width: 1100px) { #rotate { display: flex; } }
+
+    #perf { position: fixed; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 60; background: rgba(0,0,0,.6); color: #fff; font: 14px monospace; padding: 2px 10px; border-radius: 8px; pointer-events: none; }
+
+    @media (max-width: 1050px) {
+      #me-badge { width: 64px; height: 64px; }
+      .pill { font-size: 21px; padding: 2px 12px; }
+      #hearts span { font-size: 24px; }
+      #run-btn { width: 140px; height: 140px; font-size: 70px; }
+      #fly-btn { width: 128px; height: 128px; font-size: 64px; }
+      #map-worlds { gap: 10px; }
+      .w-card { padding: 10px 8px; }
+      #panel { top: calc(var(--safe-t) + 80px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud" hidden>
+    <div id="me-badge"><img id="me-photo" alt="Nhím" /></div>
+    <div class="pill" id="hearts"></div>
+    <div id="bar"><div class="fill"></div><div class="flag">🏁</div></div>
+    <div class="pill" id="harmony" hidden></div>
+    <div class="pill" id="target" hidden></div>
+    <div class="pill" id="gems-pill">💎 <b id="gems">0</b></div>
+  </div>
+  <button id="home" class="big" aria-label="Về bản đồ" hidden>🏠</button>
+  <div id="panel" hidden><div id="panel-body"></div><button id="repeat" class="big" aria-label="Nghe lại">🔊</button></div>
+  <button id="run-btn" class="big" aria-label="Giữ để chạy" hidden>🏇<small>giữ để chạy</small></button>
+  <button id="fly-btn" class="big" aria-label="Bay" hidden>🪽</button>
+  <div id="countdown" hidden></div>
+  <div id="toast"></div>
+  <div id="flash"></div>
+  <div id="confetti"></div>
+
+  <div id="map" class="overlay" hidden>
+    <div class="map-box">
+      <h1><span id="map-hero"></span>Nhím phi nước đại</h1>
+      <div id="map-worlds"></div>
+      <div class="map-row">
+        <button id="map-final">🌙 Đấu Nữ hoàng Bóng Đêm</button>
+        <div class="pill" id="map-gems"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="result" class="overlay" hidden>
+    <div class="res-box">
+      <h2 id="res-title"></h2>
+      <div class="res-mid">
+        <img id="res-photo" alt="" hidden />
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div id="res-faces"></div>
+          <div id="res-place"></div>
+          <div class="pill" id="res-gems"></div>
+        </div>
+      </div>
+      <div class="res-btns">
+        <button id="res-map" class="big" aria-label="Bản đồ">🏠</button>
+        <button id="res-retry" class="big" aria-label="Thử lại" hidden>🔄</button>
+        <button id="res-next" class="big" aria-label="Tiếp">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="start" class="overlay">
+    <div class="start-box">
+      <h1>Nhím<br />phi nước đại</h1>
+      <button id="start-btn" class="big" aria-label="Bắt đầu">🏇</button>
+      <p>Nhím ơi, chạm vào chú ngựa để bắt đầu</p>
+    </div>
+  </div>
+  <div id="rotate" class="overlay"><div>📱</div>Nhím ơi, xoay ngang máy nhé!</div>
+  <div id="perf" hidden></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -192,3 +192,9 @@ Ba thấy bay qua chướng ngại bằng 2 nút riêng quá khó, chốt lại:
 - Ghép tiếng: mỗi bước 1 ngã rẽ. Đuổi quái: mỗi ngã rẽ đúng = 1 phát trúng; đủ ngã rẽ cho 6 phát + 2 lần sai.
 - Ngã rẽ hình chữ Y: đường chính bẻ 40° sang bên đáp án đúng rồi bẻ về; nhánh cụt bẻ ngược lại, dài 36 m, cuối có đống đá chắn
   (một nửa có quái chờ). Đường dài theo số ngã rẽ: mỗi khối = 24 m hỏi + 38 m ngã rẽ + 36 m (1 chướng ngại).
+
+## 13. Chơi bằng chạm, tự chạy (02/10/2026)
+
+Bé chơi chủ yếu trên máy tính bảng → ba chốt: **Twilight luôn tự chạy**; **chạm / click màn hình = bay** (chướng ngại vẫn dừng chờ
+bé chạm); **chạm vào biển đáp án = chọn đường** (biển to hơn, ngón tay 👆 nhún dưới mỗi biển, chạm lệch trong 180 px vẫn nhận).
+Bỏ bảng phím trên màn hình; phím chỉ còn là phụ (↑ / Space bay, ← → chọn, R nghe lại, Space / Enter / Esc ở menu).

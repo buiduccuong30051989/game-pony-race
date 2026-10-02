@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+scripts/.venv
+# ảnh thật của bé + người nhà: KHÔNG đưa lên git
+public/photos/*
+!public/photos/README.txt
+public/family/*
+!public/family/README.txt

@@ -1,0 +1,21 @@
+{
+  "name": "kid-pony-race",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5186 --strictPort",
+    "build": "node scripts/check-spelling.mjs && node scripts/check-quiz.mjs && node scripts/audio-lines.mjs --check && tsc --noEmit && vite build",
+    "preview": "vite preview --host --port 5186",
+    "check": "node scripts/check-spelling.mjs && node scripts/check-quiz.mjs && node scripts/audio-lines.mjs --check && tsc --noEmit",
+    "audio": "node scripts/audio-lines.mjs && scripts/.venv/bin/python scripts/gen-audio.py"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.1"
+  }
+}

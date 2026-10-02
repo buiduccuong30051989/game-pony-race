@@ -1,5 +1,5 @@
 // Khởi động: lõi 3D, tiến độ, màn bắt đầu (lần chạm đầu mở khoá tiếng iPad), bản đồ 4 thế giới + màn cuối, điều khiển
-// (giữ nút / giữ màn hình = chạy, nút cánh = bay, chạm sao = chọn), kết quả, lưu tiến độ, tham số debug, móc test.
+// (Twilight tự chạy; chạm màn hình = bay, chạm biển đáp án = chọn đường; bàn phím phụ), kết quả, lưu tiến độ, debug, móc test.
 // Debug URL (README): ?level=1-1|…|final · ?unlock=all · ?reset=1 · &auto=1 · &mute=1 · &perf=1 · &save=1
 import { Engine } from './engine';
 import { Level, type Outcome } from './level';
@@ -73,8 +73,6 @@ async function boot(): Promise<void> {
     level = lv;
     phase = 'level';
     ui.showPlay(true);
-    held = false;
-    ui.keyDown('up', false);
     await lv.setup();
     if (lv !== level) return;
     const outcome = await lv.run();
@@ -144,16 +142,15 @@ async function boot(): Promise<void> {
   });
   ui.els.repeat.addEventListener('click', (e) => { e.stopPropagation(); level?.repeat(); });
 
-  // ---- BÀN PHÍM (chơi chỉ bằng phím cho bé tập trung): giữ ↑ chạy, nháy ↑ 2 lần bay, ← → chọn đường, R nghe lại.
-  // Menu: Space / Enter = bắt đầu · chơi tiếp · thử lại; Esc = về bản đồ.
-  let held = false;
-  const setHeld = (on: boolean) => {
-    if (held === on) return;
-    held = on;
-    ui.keyDown('up', on);
-    level?.setHold(on);
-  };
-  let lastUp = 0;
+  // ---- CHẠM / CLICK (bé chơi trên máy tính bảng): Twilight tự chạy; chạm màn hình = bay, chạm biển đáp án = chọn đường.
+  const canvas = engine.renderer.domElement;
+  canvas.addEventListener('pointerdown', (e) => {
+    unlockAudio();
+    if (phase !== 'level' || !level) return;
+    e.preventDefault();
+    if (level.tap(e.clientX, e.clientY)) sfx('sfx_tap', 0.3);
+  });
+  // Bàn phím (phụ): ↑ / Space = bay, ← → = chọn đường, R = nghe lại; menu: Space / Enter = bắt đầu · chơi tiếp · thử lại, Esc = bản đồ.
   const visible = (el: HTMLElement) => !el.hidden;
   window.addEventListener('keydown', (e) => {
     const k = e.key;
@@ -171,20 +168,11 @@ async function boot(): Promise<void> {
       return;
     }
     if (phase !== 'level' || !level) return;
-    if (k === 'ArrowUp') {
-      const now = performance.now();
-      if (now - lastUp < 380) level.pressFly();
-      lastUp = now;
-      setHeld(true);
-    } else if (k === 'ArrowLeft' || k === 'ArrowRight') {
-      const side = k === 'ArrowLeft' ? 'left' : 'right';
-      ui.keyDown(side, true);
-      setTimeout(() => ui.keyDown(side, false), 160);
-      if (level.steer(k === 'ArrowLeft' ? -1 : 1)) sfx('sfx_tap', 0.4);
-    } else if (k === 'r' || k === 'R') level.repeat();
+    if (k === 'ArrowUp' || k === ' ') level.pressFly();
+    else if (k === 'ArrowLeft' || k === 'ArrowRight') { if (level.steer(k === 'ArrowLeft' ? -1 : 1)) sfx('sfx_tap', 0.4); }
+    else if (k === 'r' || k === 'R') level.repeat();
   });
-  window.addEventListener('keyup', (e) => { if (e.key === 'ArrowUp') setHeld(false); });
-  window.addEventListener('blur', () => setHeld(false));
+  // iPad: chạm giữ lâu không bật menu / kính lúp
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---- móc test / chụp màn hình
@@ -194,7 +182,6 @@ async function boot(): Promise<void> {
     get level() { return level; },
     get waiting() { return testHook.waiting; },
     answer(ok: boolean) { const f = testHook.answer; f?.(ok); return !!f; },
-    hold(on: boolean) { setHeld(on); },
     fly() { level?.pressFly(); },
     perf,
     startLevel, openMap,

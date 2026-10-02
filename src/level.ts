@@ -1,8 +1,9 @@
 // Một bài chơi: dựng đường + cảnh, Nhím và (tuỳ bài) người nhà đua cùng / quái đuổi / quái chạy trước / Nữ hoàng Bóng Đêm.
-// CHƠI BẰNG BÀN PHÍM (cho bé tập trung): giữ ↑ = chạy, nháy ↑ 2 lần = bay / nhảy xa (lúc nào cũng được), ← → = chọn đường.
+// CHẠM / CLICK (bé chơi trên máy tính bảng): Twilight LUÔN TỰ CHẠY. Chạm màn hình = bay / nhảy xa (lúc nào cũng được),
+// chạm vào biển đáp án = chọn đường. Bàn phím là phụ: ↑ / Space = bay, ← → = chọn đường.
 //
-//  - Chướng ngại: sắp tới thì mọi thứ chậm lại và Nhím DỪNG trước chướng ngại, chờ bé nháy ↑ 2 lần để bay qua.
-//  - Mỗi câu hỏi là 1 NGÃ RẼ 2 đường, biển đáp án ở đầu mỗi đường. Thời gian gần như dừng (không đếm giờ) tới khi bé bấm ← / →.
+//  - Chướng ngại: sắp tới thì mọi thứ chậm lại và Nhím DỪNG trước chướng ngại, chờ bé chạm màn hình để bay qua.
+//  - Mỗi câu hỏi là 1 NGÃ RẼ 2 đường, biển đáp án ở đầu mỗi đường. Thời gian gần như dừng (không đếm giờ) tới khi bé chạm biển.
 //    Đúng: đi tiếp đường chính (đường tắt cầu vồng / thoát quái / bắn trúng quái). Sai: mất 1 tim, chạy vào đường cụt (đá chắn
 //    hoặc quái), người nhà gọi "Nhím ơi, quay lại!", nghe đáp án đúng, rồi tự quay ra đi đường đúng. Ghép tiếng: mỗi bước
 //    (chữ đầu, nguyên âm, dấu) là 1 ngã rẽ. Màn cuối trên trời: 2 vòng mây trái / phải thay cho ngã rẽ.
@@ -87,8 +88,6 @@ export class Level {
   private gate: Gate | null = null;
   private lastGateS = 0;
   private rnd: () => number;
-  /** bé đang giữ ↑ */
-  holding = false;
   busy = false;
   /** đang diễn cảnh (cứu bạn, đi nhầm đường): Nhím tự chạy / đứng xem */
   private cutscene = false;
@@ -103,7 +102,6 @@ export class Level {
   private orbs: Orb[] = [];
   private obSlow: Obstacle | null = null;
   private prevS = 0;
-  private idleT = 0;
   private chatT = 8;
   private t = 0;
   private camYaw = 0;
@@ -121,6 +119,8 @@ export class Level {
   private night = 0;
   private waveAnswers: boolean[] = [];
   private qWrong = new Set<string>();
+  /** biển / vòng mây đang chờ bé chạm */
+  private choiceSigns: LetterStar[] = [];
   loseFace: FamilyId | null = null;
   private readonly tmpV = new THREE.Vector3();
   private readonly tmpPose = Track.newPose();
@@ -326,18 +326,34 @@ export class Level {
     await ui.countdown();
     if (!this.alive) return 'quit';
     this.started = true;
-    this.idleT = 5.5;
-    if (this.auto) this.holding = true;
     return this.ended;
   }
 
-  /** Giữ / thả ↑. */
-  setHold(on: boolean): void {
-    this.holding = on || this.auto;
-    if (on) this.idleT = 0;
+  /**
+   * Chạm / click màn hình ở (x, y). Đang hỏi: chạm biển (hoặc gần biển nhất trong 180 px) = chọn đường đó, chạm chỗ khác thì
+   * bỏ qua. Không hỏi: bay. Trả về true nếu đã dùng cú chạm.
+   */
+  tap(x: number, y: number): boolean {
+    if (!this.started || this.over) return false;
+    if (this.pickResolve) {
+      const signs = this.choiceSigns.filter((c) => !c.gone);
+      const hit = this.engine.pick(x, y, signs.flatMap((c) => c.hits));
+      let star = hit?.object.userData.star as LetterStar | undefined;
+      if (!star) {
+        let best = 180;
+        for (const c of signs) {
+          const p = this.engine.toScreen(c.worldCenter());
+          const d = Math.hypot(p.x - x, p.y - y);
+          if (d < best) { best = d; star = c; }
+        }
+      }
+      return star ? this.steer(star.root.userData.side as number) : false;
+    }
+    this.pressFly();
+    return true;
   }
 
-  /** Nháy ↑ 2 lần: bay / nhảy xa (kỹ năng có sẵn, không cần chướng ngại). */
+  /** Bay / nhảy xa (kỹ năng có sẵn, không cần chướng ngại). */
   pressFly(): void {
     if (!this.started || this.over || this.player.alwaysFly || this.cutscene) return;
     if (this.player.fly()) {
@@ -346,7 +362,7 @@ export class Level {
     }
   }
 
-  /** ← (−1) / → (+1): chọn đường ở ngã rẽ / vòng mây. Trả về true nếu đã dùng phím. */
+  /** Chọn đường bên trái (−1) / phải (+1) ở ngã rẽ / vòng mây. Trả về true nếu đang chờ chọn. */
   steer(dir: number): boolean {
     if (!this.pickResolve) return false;
     const r = this.pickResolve;
@@ -366,8 +382,8 @@ export class Level {
     const d = this.def;
     const p = this.player;
     const trip = this.junctions.find((j) => j.trip);
-    // tốc độ mong muốn: giữ ↑ (hoặc đang hỏi / đang đi nhầm đường: tự chạy chậm)
-    let want = this.started && !this.over && !this.cutscene && (this.holding || this.busy) ? d.speed : 0;
+    // luôn tự chạy (đi nhầm đường: chạy chậm hơn chút)
+    let want = this.started && !this.over && !this.cutscene ? d.speed : 0;
     if (trip && (trip.trip === 'go' || trip.trip === 'back')) want = d.speed * 0.8;
     // chưa chọn đường thì không vào được ngã rẽ / vòng mây
     const pending = this.junctions.find((j) => j.asked && !j.choice);
@@ -382,13 +398,6 @@ export class Level {
       if (!trip) {
         this.obstacles();
         this.junctionTriggers();
-      }
-      if (!this.busy && !trip) {
-        // nhắc giữ ↑ khi đứng yên lâu
-        if (p.v < 0.5 && !this.holding) {
-          this.idleT += dt;
-          if (this.idleT > 7) { this.idleT = -9; ui.keyHint('run'); this.talk(null, bankLine('hold')); }
-        } else if (this.idleT !== 0) { if (!this.obSlow) ui.keyHint(null); this.idleT = 0; }
       }
       if (d.mode === 'race') this.tickRace(gdt, dt);
       else if (d.mode === 'chase') this.tickChase(gdt, dt);
@@ -411,6 +420,8 @@ export class Level {
     this.updateOrbs(gdt);
     for (const j of this.junctions) for (const c of j.signs) c.update(dt, this.engine.camera);
     if (this.gate) for (const c of this.gate.signs) c.update(dt, this.engine.camera);
+    // ngón tay 👆 nhún trên từng biển đáp án lúc chờ chọn
+    ui.setHands(this.pickResolve ? this.choiceSigns.filter((c) => !c.gone).map((c) => this.engine.toScreen(c.worldCenter())) : []);
     // nhắc lại câu hỏi khi bé im lâu (16 s, 32 s…)
     if (this.pickResolve && this.currentAsk && this.engine.time - this.askAt > 16 + this.askRepeats * 16) {
       this.askRepeats++;
@@ -471,7 +482,7 @@ export class Level {
     if (!this.busy && this.obSlow !== near && p.v > 2.5) {
       this.obSlow = near;
       this.engine.slow(0.15);
-      ui.keyHint('fly');
+      ui.touchHint('fly');
       this.talk(null, this.taughtFly ? bankLine('fly') : { key: 'fly_teach', text: '' });
       this.taughtFly = true;
     }
@@ -480,7 +491,7 @@ export class Level {
 
   private clearSlow(): void {
     this.obSlow = null;
-    ui.keyHint(null);
+    ui.touchHint(null);
     if (!this.busy) this.engine.slow(1);
   }
 
@@ -504,7 +515,7 @@ export class Level {
     }
   }
 
-  /** Hỏi ở ngã rẽ: biển đáp án ở đầu 2 đường, chờ ← / →. Đường đúng = đường chính. */
+  /** Hỏi ở ngã rẽ: biển đáp án ở đầu 2 đường, chờ bé chạm. Đường đúng = đường chính. */
   private async askJunction(j: Junction): Promise<void> {
     j.asked = true;
     this.busy = true;
@@ -515,7 +526,7 @@ export class Level {
       const star = this.makeSign(step, step.choices[i]);
       const onMain = side === j.turn.dir;
       (onMain ? this.track : j.branch).pose(onMain ? j.turn.s + 11 : 11, 0, this.tmpPose);
-      star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + 3.4, this.tmpPose.pos.z);
+      star.setPos(this.tmpPose.pos.x, this.tmpPose.pos.y + 3.7, this.tmpPose.pos.z);
       star.root.userData.side = side;
       this.addPost(star);
       this.engine.scene.add(star.root);
@@ -597,16 +608,17 @@ export class Level {
   // ------------------------------------------------------------------ câu hỏi chung (ngã rẽ / vòng mây)
 
   private makeSign(step: Step, label: string): LetterStar {
-    return new LetterStar(step.tone ? { label: '', tone: label as ToneName, size: 1.5 } : { label, size: 1.5 });
+    // biển to để bé chạm dễ trên máy tính bảng
+    return new LetterStar(step.tone ? { label: '', tone: label as ToneName, size: 1.9 } : { label, size: 1.9 });
   }
   private addPost(star: LetterStar): void {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.7, 8), new THREE.MeshLambertMaterial({ color: 0xc98d5e }));
-    post.position.y = 1.35;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.9, 8), new THREE.MeshLambertMaterial({ color: 0xc98d5e }));
+    post.position.y = 1.45;
     star.root.add(post);
   }
 
   /**
-   * Hỏi 1 lượt: thời gian gần như dừng, hiện bảng (lượt đầu của câu), đọc câu hỏi, chờ ← / → (không đếm giờ).
+   * Hỏi 1 lượt: thời gian gần như dừng, hiện bảng (lượt đầu của câu), đọc câu hỏi, chờ bé chạm biển (không đếm giờ).
    * `mainDir`: bên có đáp án đúng. Trả về bên bé chọn. Sai: biển sai lắc, đọc chữ / số bé chọn, biển đúng sáng lên.
    */
   private async ask(slot: Slot, signs: LetterStar[], mainDir: number): Promise<number> {
@@ -620,7 +632,8 @@ export class Level {
       ui.showPanel(q.panel, this.def.theme.fruit);
       for (const k of q.intro) { await play(k); if (!this.alive) return 0; }
     }
-    ui.keyHint('turn');
+    ui.touchHint('turn');
+    this.choiceSigns = signs;
     this.currentAsk = step.ask;
     this.askAt = this.engine.time;
     this.askRepeats = 0;
@@ -636,7 +649,9 @@ export class Level {
     });
     setAnswer(null, null);
     this.currentAsk = null;
-    ui.keyHint(null);
+    this.choiceSigns = [];
+    ui.touchHint(null);
+    ui.setHands([]);
     if (!this.alive || !dir) return 0;
     stopSpeech();
     const picked = signs.find((c) => c.root.userData.side === dir)!;
@@ -732,7 +747,7 @@ export class Level {
     this.over = true;
     this.busy = true;
     this.engine.slow(1);
-    ui.keyHint(null);
+    ui.touchHint(null);
     this.player.finishedAt = this.t;
     const before = this.racers.filter((r) => r.finishedAt >= 0 && r.finishedAt <= this.t);
     this.finishPlace = 1 + before.length;
@@ -818,7 +833,7 @@ export class Level {
     this.over = true;
     this.busy = true;
     this.engine.slow(1);
-    ui.keyHint(null);
+    ui.touchHint(null);
     sfx('sfx_win', 0.6);
     await this.talking;
     await narrate('safe');
@@ -1213,11 +1228,12 @@ export class Level {
     stopSpeech();
     setAnswer(null, null);
     if (this.pickResolve) { const r = this.pickResolve; this.pickResolve = null; r(0); }
+    ui.setHands([]);
     this.resolveEnd('quit');
     this.engine.slow(1);
     this.engine.timeScale = 1;
     this.engine.magic.setAdditive(false);
-    ui.keyHint(null);
+    ui.touchHint(null);
     ui.showPanel(null);
     for (const j of this.junctions) { this.disposeSigns(j.signs); j.mon?.dispose(); }
     if (this.gate) this.disposeGate(this.gate);

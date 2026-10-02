@@ -14,7 +14,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 export const els = {
   hud: $('hud'), hearts: $('hearts'), gems: $('gems'), bar: $('bar'), harmony: $('harmony'), target: $('target'),
   mePhoto: $<HTMLImageElement>('me-photo'), home: $('home'), panel: $('panel'), panelBody: $('panel-body'), repeat: $('repeat'),
-  keys: $('keys'), keyLeft: $('key-left'), keyUp: $('key-up'), keyRight: $('key-right'), keyUpLabel: $('key-up-label'), countdown: $('countdown'), toast: $('toast'), flash: $('flash'), confetti: $('confetti'),
+  touchHint: $('touch-hint'), touchHintText: $('touch-hint-text'), hands: $('hands'), countdown: $('countdown'), toast: $('toast'), flash: $('flash'), confetti: $('confetti'),
   map: $('map'), mapWorlds: $('map-worlds'), mapFinal: $('map-final'), mapGems: $('map-gems'), mapHero: $('map-hero'),
   result: $('result'), resTitle: $('res-title'), resPhoto: $<HTMLImageElement>('res-photo'), resFaces: $('res-faces'), resPlace: $('res-place'),
   resGems: $('res-gems'), resMap: $('res-map'), resRetry: $('res-retry'), resNext: $('res-next'),
@@ -24,7 +24,8 @@ export const els = {
 // ------------------------------------------------------------------ HUD
 
 export function showPlay(on: boolean): void {
-  els.hud.hidden = !on; els.home.hidden = !on; els.keys.hidden = !on;
+  els.hud.hidden = !on; els.home.hidden = !on;
+  if (!on) { touchHint(null); setHands([]); }
   if (!on) { els.panel.hidden = true; els.harmony.hidden = true; els.target.hidden = true; }
 }
 
@@ -130,19 +131,19 @@ export function solvePanel(ans: string): void {
   if (q) { q.classList.remove('eq-q'); q.textContent = ans; (q as HTMLElement).style.color = '#58cc02'; }
 }
 
-// ------------------------------------------------------------------ bảng phím
+// ------------------------------------------------------------------ gợi ý chạm
 
-/** Làm sáng phím cần bấm: 'run' (giữ ↑), 'fly' (nháy ↑ 2 lần), 'turn' (← / →), null = bình thường. */
-export function keyHint(what: 'run' | 'fly' | 'turn' | null): void {
-  els.keys.className = what ?? '';
-  els.keyUp.classList.toggle('hint', what === 'run' || what === 'fly');
-  els.keyLeft.classList.toggle('hint', what === 'turn');
-  els.keyRight.classList.toggle('hint', what === 'turn');
-  els.keyUpLabel.textContent = what === 'fly' ? 'nháy 2 lần: bay!' : what === 'run' ? 'giữ để chạy' : 'giữ: chạy · 2 lần: bay';
+/** Dòng gợi ý đáy màn: 'fly' = "chạm để bay!" (chướng ngại), 'turn' = "chạm vào biển đúng" (ngã rẽ), null = ẩn. */
+export function touchHint(what: 'fly' | 'turn' | null): void {
+  els.touchHint.hidden = !what;
+  if (what) els.touchHintText.textContent = what === 'fly' ? 'Chạm để bay!' : 'Chạm vào biển đúng';
 }
-/** Phím đang bấm (lún xuống). */
-export function keyDown(key: 'left' | 'up' | 'right', on: boolean): void {
-  ({ left: els.keyLeft, up: els.keyUp, right: els.keyRight })[key].classList.toggle('down', on);
+/** Ngón tay 👆 nhún ngay dưới từng biển đáp án (toạ độ màn hình). */
+export function setHands(points: { x: number; y: number }[]): void {
+  const box = els.hands;
+  while (box.childElementCount < points.length) box.appendChild(Object.assign(document.createElement('i'), { textContent: '👆' }));
+  while (box.childElementCount > points.length) box.lastElementChild!.remove();
+  points.forEach((p, i) => { const el = box.children[i] as HTMLElement; el.style.left = `${p.x}px`; el.style.top = `${p.y}px`; });
 }
 
 // ------------------------------------------------------------------ hiệu ứng

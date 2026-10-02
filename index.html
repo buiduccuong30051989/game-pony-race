@@ -55,17 +55,14 @@
     #target span.off { opacity: .25; filter: grayscale(1); }
     #home { position: fixed; z-index: 6; top: var(--safe-t); right: var(--safe-r); width: 76px; height: 76px; font-size: 36px; }
 
-    /* bảng phím: ← (rẽ trái) · ↑ (giữ chạy, nháy 2 lần bay) · → (rẽ phải) — chơi bằng bàn phím */
-    #keys { position: fixed; z-index: 5; left: 50%; bottom: calc(var(--safe-b) + 6px); transform: translateX(-50%); display: flex; gap: 14px; align-items: flex-end; pointer-events: none; }
-    .key { display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .15s, opacity .2s; }
-    .key b { width: 78px; height: 78px; border-radius: 18px; border: 5px solid var(--ink); background: linear-gradient(180deg, #fff, #ece4ff); box-shadow: 0 6px 0 rgba(59,50,32,.25);
-      display: grid; place-items: center; font-size: 44px; line-height: 1; color: #6f3fa8; }
-    .key small { font-size: 18px; font-weight: 800; color: #6f3fa8; background: rgba(255,255,255,.92); border-radius: 999px; padding: 0 10px; white-space: nowrap; }
-    .key.up b { width: 96px; height: 96px; font-size: 54px; }
-    .key.down b { transform: translateY(4px); box-shadow: 0 2px 0 rgba(59,50,32,.25); background: linear-gradient(180deg, #ffe0f0, #ffb3d9); }
-    .key.dim { opacity: .45; }
-    .key.hint b { animation: pulse .7s ease-in-out infinite; border-color: var(--pink); box-shadow: 0 0 0 8px rgba(255,209,102,.8), 0 0 36px 12px rgba(255,209,102,.9); }
-    #keys.turn .key.up, #keys.fly .key.side, #keys.run .key.side { opacity: .35; }
+    /* gợi ý chạm: ngón tay to "chạm để bay!" (chướng ngại) / "chạm vào biển đúng" (ngã rẽ) + ngón tay nhún trên từng biển */
+    #touch-hint { position: fixed; z-index: 6; left: 50%; bottom: calc(var(--safe-b) + 14px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,.94); border: 5px solid var(--pink); border-radius: 999px; padding: 4px 24px 4px 12px; box-shadow: 0 6px 0 rgba(160,40,110,.25);
+      font-size: clamp(22px, 2.8vw, 32px); font-weight: 800; color: #b83b7d; pointer-events: none; }
+    #touch-hint span { font-size: 1.8em; display: inline-block; animation: tapHand .8s ease-in-out infinite; }
+    @keyframes tapHand { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(8px) scale(.9); } }
+    #hands { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+    #hands i { position: absolute; font-style: normal; font-size: 56px; margin: 30px 0 0 -10px; animation: tapHand .8s ease-in-out infinite; filter: drop-shadow(0 3px 2px rgba(0,0,0,.3)); }
 
     /* bảng câu hỏi */
     #panel { position: fixed; z-index: 7; top: calc(var(--safe-t) + 96px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px;
@@ -92,7 +89,7 @@
     @keyframes cd { 0% { transform: scale(2.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
 
     /* phụ đề */
-    #subtitle { position: fixed; z-index: 8; left: 50%; bottom: calc(var(--safe-b) + 150px); transform: translateX(-50%); width: min(760px, calc(100vw - 40px)); display: flex; gap: 12px; align-items: center;
+    #subtitle { position: fixed; z-index: 8; left: 50%; bottom: calc(var(--safe-b) + 84px); transform: translateX(-50%); width: min(760px, calc(100vw - 40px)); display: flex; gap: 12px; align-items: center;
       background: rgba(255,253,246,.96); border: 5px solid var(--sc, #a06cd5); border-radius: 26px; padding: 8px 18px 8px 10px; box-shadow: 0 6px 0 rgba(59,50,32,.18); pointer-events: none; }
     #subtitle.in { animation: subIn .3s ease both; }
     @keyframes subIn { from { transform: translateX(-50%) translateY(30px); opacity: 0; } }
@@ -182,7 +179,6 @@
       #me-badge { width: 64px; height: 64px; }
       .pill { font-size: 21px; padding: 2px 12px; }
       #hearts span { font-size: 24px; }
-      .key b { width: 66px; height: 66px; font-size: 36px; } .key.up b { width: 80px; height: 80px; font-size: 44px; }
       #map-worlds { gap: 10px; }
       .w-card { padding: 10px 8px; }
       #panel { top: calc(var(--safe-t) + 80px); }
@@ -202,11 +198,8 @@
   </div>
   <button id="home" class="big" aria-label="Về bản đồ" hidden>🏠</button>
   <div id="panel" hidden><div id="panel-body"></div><button id="repeat" class="big" aria-label="Nghe lại">🔊</button></div>
-  <div id="keys" hidden>
-    <div class="key side" id="key-left"><b>⬅</b><small>rẽ trái</small></div>
-    <div class="key up" id="key-up"><b>⬆</b><small id="key-up-label">giữ: chạy · 2 lần: bay</small></div>
-    <div class="key side" id="key-right"><b>➡</b><small>rẽ phải</small></div>
-  </div>
+  <div id="touch-hint" hidden><span>👆</span><b id="touch-hint-text"></b></div>
+  <div id="hands"></div>
   <div id="countdown" hidden></div>
   <div id="toast"></div>
   <div id="flash"></div>
@@ -246,7 +239,7 @@
     <div class="start-box">
       <h1>Nhím<br />phi nước đại</h1>
       <button id="start-btn" class="big" aria-label="Bắt đầu">🏇</button>
-      <p>Nhím ơi, bấm phím cách (Space) hoặc chạm chú ngựa để bắt đầu</p>
+      <p>Nhím ơi, chạm vào chú ngựa để bắt đầu</p>
     </div>
   </div>
   <div id="rotate" class="overlay"><div>📱</div>Nhím ơi, xoay ngang máy nhé!</div>

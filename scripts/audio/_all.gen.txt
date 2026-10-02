@@ -32,12 +32,12 @@ b_escape_1|my|Đúng đường rồi! Chạy mau!
 b_escape_2|my|Quái đuổi không kịp rồi!
 b_escape_3|my|Hay lắm, bỏ xa quái rồi!
 b_escape_4|my|Đường đúng rồi, chạy tiếp nào!
-b_fly_0|my|Nháy nút lên hai lần để bay nào!
-b_fly_1|my|Bay lên nào! Nháy hai lần nhé!
-b_fly_2|my|Có chướng ngại kìa! Nháy nút lên hai lần!
-b_fly_3|my|Nháy nhanh hai lần để bay qua nhé!
-b_fly_4|my|Bay qua đi Nhím! Nháy hai lần!
-b_fly_5|my|Nhím ơi, nháy nút lên hai lần nào!
+b_fly_0|my|Chạm màn hình để bay nào!
+b_fly_1|my|Bay lên nào! Chạm vào màn hình nhé!
+b_fly_2|my|Có chướng ngại kìa! Chạm để bay!
+b_fly_3|my|Chạm nhẹ một cái là bay qua!
+b_fly_4|my|Bay qua đi Nhím! Chạm màn hình nào!
+b_fly_5|my|Nhím ơi, chạm để bay lên!
 b_flyok_0|my|Vèo! Bay qua rồi!
 b_flyok_1|my|Giỏi quá, bay cao ghê!
 b_flyok_2|my|Bay đẹp quá!
@@ -47,14 +47,6 @@ b_flyok_5|my|Hay lắm!
 b_gate_0|my|Sắp tới đích rồi!
 b_gate_1|my|Cố lên, gần tới rồi!
 b_gate_2|my|Đích ở ngay phía trước!
-b_hold_0|my|Giữ nút lên để chạy nào!
-b_hold_1|my|Nhím ơi, giữ nút lên để chạy nhé!
-b_hold_2|my|Chạy tiếp thôi Nhím!
-b_hold_3|my|Giữ nút mũi tên lên là chạy đó!
-b_hold_4|my|Mình chạy tiếp nhé!
-b_hold_5|my|Đường đua đang chờ Nhím đó!
-b_hold_6|my|Giữ nút lên để phi nhanh nào!
-b_hold_7|my|Cố lên Nhím, chạy nào!
 b_laugh_0|nmm|Hô hô hô! Chưa đúng rồi!
 b_laugh_1|nmm|Hi hi! Thử lại đi nào!
 b_laugh_2|nmm|Ha ha! Bóng tối tiến lên!
@@ -178,13 +170,13 @@ f_ongcuong_lose|ong|Không sao cháu ơi, thử lại nào!
 f_ongcuong_wait|ong|Cháu ông chạy tiếp nào!
 f_ongcuong_win|ong|Cháu ông về nhất! Giỏi quá!
 final_2|nmm|Ha ha ha! Đấu với ta trên trời nào, cô bé!
-final_3|my|Bay qua vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!
-fly_teach|my|Có chướng ngại kìa! Nháy nhanh nút lên hai lần để bay qua nhé!
+final_3|my|Chạm vào vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!
+fly_teach|my|Có chướng ngại kìa! Chạm vào màn hình để bay qua nhé!
 go|my|Chạy nào!
 hunt_done|my|Cứu được cả hai bạn rồi! Nhím giỏi quá!
 hunt_free|my|Bong bóng vỡ rồi! Bạn được tự do rồi!
 hunt_next|my|Còn một bạn nữa! Đuổi tiếp nào!
-keys|my|Giữ nút lên để chạy. Nháy nút lên hai lần để bay. Tới ngã rẽ thì bấm nút trái hoặc nút phải nhé!
+keys|my|Nhím sẽ tự chạy nhé. Chạm vào màn hình là bay lên. Tới ngã rẽ thì chạm vào biển có đáp án đúng nhé!
 ln_a|my|a
 ln_aa|my|ớ
 ln_aw|my|á
@@ -635,7 +627,7 @@ tl_huyen|my|dấu huyền
 tl_nang|my|dấu nặng
 tl_nga|my|dấu ngã
 tl_sac|my|dấu sắc
-turn_teach|my|Đáp án nằm trên biển ở đầu mỗi đường. Bấm nút trái hoặc nút phải để chọn đường nhé!
+turn_teach|my|Đáp án nằm trên biển ở đầu mỗi đường. Chạm vào biển đúng để chọn đường nhé!
 unlock_aura|my|Nhím có hào quang sao lấp lánh rồi!
 unlock_crown|my|Nhím có vòng hoa mới rồi!
 unlock_trail|my|Nhím có vệt cầu vồng mới rồi!

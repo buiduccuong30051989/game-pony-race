@@ -49,10 +49,10 @@ export const LINES: Record<string, [Voice, string]> = {
   lv_4_2: ['nar', 'Phù thuỷ bắt bạn {Cadance} và bạn Cầu Vồng! Đuổi theo cứu bạn nào!'],
   lv_final: ['nar', 'Bầu trời đêm. Nữ hoàng Bóng Đêm đang chờ Nhím ở trên cao!'],
   final_2: ['nmm', 'Ha ha ha! Đấu với ta trên trời nào, cô bé!'],
-  final_3: ['my', 'Bay qua vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!'],
-  keys: ['my', 'Giữ nút lên để chạy. Nháy nút lên hai lần để bay. Tới ngã rẽ thì bấm nút trái hoặc nút phải nhé!'],
-  fly_teach: ['my', 'Có chướng ngại kìa! Nháy nhanh nút lên hai lần để bay qua nhé!'],
-  turn_teach: ['my', 'Đáp án nằm trên biển ở đầu mỗi đường. Bấm nút trái hoặc nút phải để chọn đường nhé!'],
+  final_3: ['my', 'Chạm vào vòng mây có đáp án đúng để né phép, và bắn phép vào Nữ hoàng nhé!'],
+  keys: ['my', 'Nhím sẽ tự chạy nhé. Chạm vào màn hình là bay lên. Tới ngã rẽ thì chạm vào biển có đáp án đúng nhé!'],
+  fly_teach: ['my', 'Có chướng ngại kìa! Chạm vào màn hình để bay qua nhé!'],
+  turn_teach: ['my', 'Đáp án nằm trên biển ở đầu mỗi đường. Chạm vào biển đúng để chọn đường nhé!'],
 
   // ---- bị đuổi / đuổi quái
   wave: ['my', 'Ôi, nhiều quái quá! Trả lời đúng hai câu để bật khiên phép thuật!'],
@@ -127,11 +127,9 @@ export const BANK_TEXT: Record<string, [Voice, string[]]> = {
     'Ồ, chưa đúng rồi. Nghe nè:', 'Hì, chưa phải rồi. Nghe nè:', 'Chưa đúng rồi, Nhím nhớ nhé:', 'Ừm, không phải rồi. Đáp án là:',
     'Gần đúng rồi! Nghe nè:', 'Không sao, mình học nhé:',
   ]],
-  hold: ['my', [
-    'Giữ nút lên để chạy nào!', 'Nhím ơi, giữ nút lên để chạy nhé!', 'Chạy tiếp thôi Nhím!', 'Giữ nút mũi tên lên là chạy đó!', 'Mình chạy tiếp nhé!', 'Đường đua đang chờ Nhím đó!', 'Giữ nút lên để phi nhanh nào!', 'Cố lên Nhím, chạy nào!'
-  ]],
   fly: ['my', [
-    'Nháy nút lên hai lần để bay nào!', 'Bay lên nào! Nháy hai lần nhé!', 'Có chướng ngại kìa! Nháy nút lên hai lần!', 'Nháy nhanh hai lần để bay qua nhé!', 'Bay qua đi Nhím! Nháy hai lần!', 'Nhím ơi, nháy nút lên hai lần nào!'
+    'Chạm màn hình để bay nào!', 'Bay lên nào! Chạm vào màn hình nhé!', 'Có chướng ngại kìa! Chạm để bay!', 'Chạm nhẹ một cái là bay qua!',
+    'Bay qua đi Nhím! Chạm màn hình nào!', 'Nhím ơi, chạm để bay lên!',
   ]],
   flyok: ['my', [
     'Vèo! Bay qua rồi!', 'Giỏi quá, bay cao ghê!', 'Bay đẹp quá!', 'Qua rồi!', 'Nhím bay như chim!', 'Hay lắm!',

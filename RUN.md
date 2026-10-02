@@ -1,6 +1,7 @@
 # Cách chạy: Nhím phi nước đại
 
-Game web 3D (Vite + TypeScript + Three.js) cho Nhím (5 tuổi). Chơi trên **iPad ngang** (chỉ chạm), mở từ Mac qua Wi-Fi.
+Game web 3D (Vite + TypeScript + Three.js) cho Nhím (5 tuổi). **Chơi bằng bàn phím** trên Mac / laptop (↑ chạy, nháy ↑ 2 lần
+bay, ← → chọn đường ở ngã rẽ).
 Không cần mạng khi chơi (giọng đọc đã sinh sẵn trong `public/audio/`), trừ font Baloo 2 lấy từ Google Fonts lần đầu.
 
 ## Cần có
@@ -17,15 +18,13 @@ pnpm install
 pnpm dev          # http://localhost:5186
 ```
 
-Chạm chú ngựa 🏇 giữa màn hình để bắt đầu (lần chạm đầu cũng mở khoá tiếng trên iPad) → bản đồ → chọn bài.
+Bấm Space (hoặc chạm chú ngựa 🏇) để bắt đầu → bản đồ → chọn bài (Space chơi bài đang sáng). Mở toàn màn hình (Ctrl+Cmd+F)
+cho bé đỡ phân tâm.
 
-## Chơi trên iPad
+## Chơi trên máy khác cùng Wi-Fi
 
-1. Mac và iPad cùng Wi-Fi. `pnpm dev` in dòng `Network: http://192.168.x.x:5186` → mở bằng Safari trên iPad.
-2. Safari → Chia sẻ → **Thêm vào MH chính** để chạy toàn màn hình như app.
-3. Xoay **ngang** iPad (màn dọc sẽ nhắc "xoay ngang máy nhé").
-4. Không có tiếng: tắt chế độ im lặng, tăng âm lượng, chạm lại nút bắt đầu.
-5. Bản build nhẹ hơn: `pnpm build && pnpm preview` → `http://192.168.x.x:5186`.
+`pnpm dev` in dòng `Network: http://192.168.x.x:5186` → mở bằng trình duyệt trên laptop có bàn phím. Bản build nhẹ hơn:
+`pnpm build && pnpm preview`. (iPad không có bàn phím thì không điều khiển được lúc chạy.)
 
 ## Ảnh thật (không lên git)
 
@@ -56,7 +55,8 @@ pnpm build        # như trên + build vào dist/
 node scripts/test/play-all.mjs right        # máy tự chơi 9 bài, trả lời đúng hết → phải thắng
 node scripts/test/play-all.mjs wrong 1-1    # trả lời sai hết → phải thua sau 3 câu
 node scripts/test/play-all.mjs mixed        # sai 1 câu rồi đúng → vẫn thắng
-node scripts/test/play-human.mjs 1-2        # chơi như người: giữ nút 🏇, bấm 🪽 khi sáng, bấm sao trên màn hình (có tiếng)
+node scripts/test/play-human.mjs 1-2        # chơi như người bằng phím: giữ ↑, nháy ↑↑ khi sáng, ← → đúng biển (có tiếng)
+WRONG=1 node scripts/test/play-human.mjs 1-1  # rẽ sai ngã rẽ đầu → đường cụt → quay ra
 OUT=/tmp node scripts/test/shot.mjs 3-1 8 14  # chụp màn hình giây 8, 14
 ```
 

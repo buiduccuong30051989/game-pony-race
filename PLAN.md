@@ -180,3 +180,15 @@ Mỗi bài 5–7 câu, xoay vòng các loại; không quá 2 câu cùng loại l
 - **Quái dùng**: slime (J-Toastie), ma, yêu tinh, rồng nhỏ, rồng lớn, pháp sư, phù thuỷ (bỏ 2 slime Quaternius không dùng).
 - **Đo** (headless Chrome, Mac): 150–210k tam giác, 75–145 draw call (vượt 120 một chút ở bài bị đuổi lúc đợt kịch tính có 4 quái);
   heap JS ổn định ~40 MB. Test: `scripts/test/play-all.mjs` (9 bài × đúng / sai / sai 1), `play-human.mjs` (giữ nút, chạm sao thật).
+
+## 12. Đổi cách chơi sau khi ba thử (02/10/2026)
+
+Ba thấy bay qua chướng ngại bằng 2 nút riêng quá khó, chốt lại:
+- **Chỉ dùng bàn phím** (bé tập trung): giữ ↑ chạy, **nháy ↑ 2 lần = bay / nhảy xa** (kỹ năng có sẵn, lúc nào cũng dùng được;
+  bỏ nút cánh). Chướng ngại: chậm lại rồi **dừng trước chướng ngại** chờ bé nháy ↑ 2 lần.
+- **Mỗi câu hỏi là 1 ngã rẽ 2 đường** (← / →), biển đáp án ở đầu mỗi đường, cho MỌI bài trên mặt đất (đua, bị đuổi, đuổi quái);
+  màn cuối là 2 vòng mây trái / phải. Bỏ 3 ngôi sao trước mặt và chạm màn hình.
+- **Rẽ sai**: mất 1 tim, vào đường cụt (đá hoặc quái), người nhà gọi lại, nghe đáp án đúng, tự quay ra đi đường đúng (không chọn lại).
+- Ghép tiếng: mỗi bước 1 ngã rẽ. Đuổi quái: mỗi ngã rẽ đúng = 1 phát trúng; đủ ngã rẽ cho 6 phát + 2 lần sai.
+- Ngã rẽ hình chữ Y: đường chính bẻ 40° sang bên đáp án đúng rồi bẻ về; nhánh cụt bẻ ngược lại, dài 36 m, cuối có đống đá chắn
+  (một nửa có quái chờ). Đường dài theo số ngã rẽ: mỗi khối = 24 m hỏi + 38 m ngã rẽ + 36 m (1 chướng ngại).

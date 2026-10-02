@@ -1,0 +1,697 @@
+# TỰ SINH bởi scripts/audio-lines.mjs – ĐỪNG SỬA TAY. Sửa câu trong src/lines.ts / letters.ts / numbers.ts / words.ts rồi `pnpm audio`.
+#voice my|vi-VN-HoaiMyNeural|-10%|+0Hz|en-US-JennyNeural|+0Hz
+#voice nar|vi-VN-HoaiMyNeural|-16%|-2Hz|en-US-JennyNeural|-2Hz
+#voice twi|vi-VN-HoaiMyNeural|-8%|+14Hz|en-US-AnaNeural|+0Hz
+#voice nmm|vi-VN-HoaiMyNeural|-14%|-18Hz|en-US-JennyNeural|-18Hz
+#voice ba|vi-VN-NamMinhNeural|-6%|+0Hz|en-US-GuyNeural|+0Hz
+#voice me|vi-VN-HoaiMyNeural|-10%|+3Hz|en-US-JennyNeural|+3Hz
+#voice ong|vi-VN-NamMinhNeural|-16%|-10Hz|en-US-GuyNeural|-10Hz
+#voice batuyet|vi-VN-HoaiMyNeural|-16%|-7Hz|en-US-JennyNeural|-7Hz
+#voice bachanh|vi-VN-HoaiMyNeural|-12%|-4Hz|en-US-JennyNeural|-4Hz
+#voice friend|vi-VN-HoaiMyNeural|-4%|+9Hz|en-US-AnaNeural|+0Hz
+b_attack_0|my|Quái bắn phép kìa! Trả lời đúng để né nhé!
+b_attack_1|my|Cẩn thận! Phép bóng tối bay tới!
+b_attack_2|my|Ối, quái bắn phép! Trả lời nhanh nào!
+b_attack_3|my|Phép tím bay tới kìa! Né đi Nhím!
+b_attack_4|my|Quái làm phép rồi! Trả lời đúng là né được!
+b_boost_0|my|Đường tắt cầu vồng! Nhanh quá!
+b_boost_1|my|Vút! Nhím vượt lên rồi!
+b_boost_2|my|Cầu vồng đẩy Nhím bay vèo!
+b_boost_3|my|Nhanh như gió!
+b_boost_4|my|Vượt lên nào!
+b_dodge_0|my|Né được rồi!
+b_dodge_1|my|Vèo, trượt rồi nhé!
+b_dodge_2|my|Phép không trúng Nhím!
+b_dodge_3|my|Né giỏi quá!
+b_dodge_4|my|Hụt rồi, quái ơi!
+b_dodge_5|my|Nhím nhanh hơn phép!
+b_fly_0|my|Bay lên nào!
+b_fly_1|my|Chạm đôi cánh để bay qua!
+b_fly_2|my|Có chướng ngại kìa! Bay lên!
+b_fly_3|my|Vỗ cánh bay qua nhé!
+b_fly_4|my|Bay qua đi Nhím!
+b_fly_5|my|Chạm nút cánh nào!
+b_fly_6|my|Ối, cái gì chắn đường kìa! Bay lên!
+b_fly_7|my|Nhím ơi, bay lên!
+b_flyok_0|my|Vèo! Bay qua rồi!
+b_flyok_1|my|Giỏi quá, bay cao ghê!
+b_flyok_2|my|Bay đẹp quá!
+b_flyok_3|my|Qua rồi!
+b_flyok_4|my|Nhím bay như chim!
+b_flyok_5|my|Hay lắm!
+b_fork_0|my|Chạm vào biển đường đúng nhé!
+b_fork_1|my|Đường nào đây ta?
+b_fork_2|my|Chọn một biển nhé Nhím!
+b_fork_3|my|Ngã rẽ kìa! Chạm biển đúng nào!
+b_fork_4|my|Đường tắt cầu vồng ở bên nào nhỉ?
+b_fork_5|my|Nhím chọn đường nào?
+b_gate_0|my|Sắp tới đích rồi!
+b_gate_1|my|Cố lên, gần tới rồi!
+b_gate_2|my|Đích ở ngay phía trước!
+b_hold_0|my|Giữ nút để chạy nào!
+b_hold_1|my|Nhím ơi, giữ nút ngựa để chạy nhé!
+b_hold_2|my|Chạy tiếp thôi Nhím!
+b_hold_3|my|Giữ ngón tay trên nút là chạy đó!
+b_hold_4|my|Mình chạy tiếp nhé!
+b_hold_5|my|Đường đua đang chờ Nhím đó!
+b_hold_6|my|Nhấn giữ nút để phi nhanh nào!
+b_hold_7|my|Cố lên Nhím, chạy nào!
+b_laugh_0|nmm|Hô hô hô! Chưa đúng rồi!
+b_laugh_1|nmm|Hi hi! Thử lại đi nào!
+b_laugh_2|nmm|Ha ha! Bóng tối tiến lên!
+b_laugh_3|nmm|Hừm hừm, sai rồi nhé!
+b_laugh_4|nmm|Hô hô! Ta vẫn còn mạnh lắm!
+b_laugh_5|nmm|Ha ha ha! Nhìn kỹ lại xem!
+b_miss_0|my|Ôi, phép bay trượt rồi!
+b_miss_1|my|Hụt mất rồi!
+b_miss_2|my|Phép chưa trúng, cố lên!
+b_miss_3|my|Ối, quái chạy mất rồi!
+b_mud_0|my|Ôi, đường này lầy quá! Cố lên!
+b_mud_1|my|Đường vòng rồi, chạy tiếp nào!
+b_mud_2|my|Bì bõm! Chạy chậm một chút thôi!
+b_mud_3|my|Đường bùn rồi, không sao!
+b_my_turn_0|twi|Đến lượt Nhím!
+b_my_turn_1|twi|Nhím bắn phép nào!
+b_my_turn_2|twi|Phép thuật tình bạn đây!
+b_my_turn_3|twi|Nhím làm phép nè!
+b_my_turn_4|twi|Đến lượt mình rồi!
+b_near_0|my|Đuổi kịp rồi! Trả lời đúng để bắn phép!
+b_near_1|my|Sắp bắt được rồi! Làm phép nào!
+b_near_2|my|Quái ở ngay trước mặt! Trả lời nào!
+b_near_3|my|Gần lắm rồi! Bắn phép thôi!
+b_nmm_hurt_0|nmm|Ối! Không thể nào!
+b_nmm_hurt_1|nmm|Hừm! Ngọc Hài Hoà sáng thêm rồi!
+b_nmm_hurt_2|nmm|Phép gì mà sáng thế!
+b_nmm_hurt_3|nmm|Bóng tối của ta… mỏng dần rồi!
+b_nmm_hurt_4|nmm|Á! Đau quá đi!
+b_nmm_turn_0|nmm|Đỡ phép của ta này!
+b_nmm_turn_1|nmm|Ha ha! Phép trăng đây!
+b_nmm_turn_2|nmm|Bóng đêm, bay đi!
+b_nmm_turn_3|nmm|Ta bắn phép đây, cô bé!
+b_nmm_turn_4|nmm|Né được không nào?
+b_no_0|my|Ồ, chưa đúng rồi. Nghe nè:
+b_no_1|my|Hì, chưa phải rồi. Nghe nè:
+b_no_2|my|Chưa đúng rồi, Nhím nhớ nhé:
+b_no_3|my|Ừm, không phải rồi. Đáp án là:
+b_no_4|my|Gần đúng rồi! Nghe nè:
+b_no_5|my|Không sao, mình học nhé:
+b_ok_0|my|Đúng rồi!
+b_ok_1|my|Giỏi quá!
+b_ok_2|my|Hay lắm Nhím ơi!
+b_ok_3|my|Tuyệt vời!
+b_ok_4|my|Chính xác!
+b_ok_5|my|Nhím giỏi ghê!
+b_ok_6|my|Hoan hô Nhím!
+b_ok_7|my|Xuất sắc!
+b_ok_8|my|Đúng rồi, giỏi lắm!
+b_ok_9|my|Nhím nhanh quá!
+b_oops_0|my|Ối, vấp rồi! Không sao, chạy tiếp nào!
+b_oops_1|my|Úi! Đứng dậy chạy tiếp nhé!
+b_oops_2|my|Lộn một vòng rồi! Chạy tiếp thôi!
+b_oops_3|my|Không sao, lần sau bay lên nhé!
+b_oops_4|my|Ui da! Mình chạy tiếp nào!
+b_ouch_0|my|Ối, trúng phép rồi!
+b_ouch_1|my|Úi da! Cố lên Nhím!
+b_ouch_2|my|Trúng rồi, nhưng Nhím vẫn chạy tiếp!
+b_ouch_3|my|Ối! Mất một trái tim rồi!
+b_purify_0|my|Bóng tối tan rồi! Bạn ấy vui lại rồi!
+b_purify_1|my|Nhìn kìa, bạn ấy hết buồn rồi!
+b_purify_2|my|Bạn ấy về phe mình rồi!
+b_purify_3|my|Hoan hô! Bóng tối chạy mất rồi!
+b_purify_4|my|Bạn ấy đang nhảy múa kìa!
+b_purify_5|my|Hết bị bóng tối nhập rồi!
+b_tap_0|my|Chạm vào ngôi sao đúng nhé!
+b_tap_1|my|Ngôi sao nào đây ta?
+b_tap_2|my|Chạm nhẹ vào ngôi sao nào!
+b_tap_3|my|Nhím chọn ngôi sao nào?
+b_tap_4|my|Ngôi sao đang chờ Nhím chạm đó!
+b_tap_5|my|Thử chạm một ngôi sao xem!
+b_zap_0|my|Trúng rồi!
+b_zap_1|my|Phép của Nhím mạnh quá!
+b_zap_2|my|Bùm! Trúng quái rồi!
+b_zap_3|my|Hay lắm! Trúng ngay!
+b_zap_4|my|Phép sáng quá!
+c_b|my|bờ
+c_c|my|cờ
+c_ch|my|chờ
+c_d|my|dờ
+c_dd|my|đờ
+c_g|my|gờ
+c_h|my|hờ
+c_k|my|ca
+c_l|my|lờ
+c_m|my|mờ
+c_n|my|nờ
+c_ng|my|ngờ
+c_p|my|pờ
+c_qu|my|quờ
+c_r|my|rờ
+c_s|my|sờ
+c_t|my|tờ
+c_v|my|vờ
+c_x|my|xờ
+cl_1|twi|Bằng phép màu của tình bạn và gia đình!
+cl_2|nar|Nữ hoàng Bóng Đêm biến mất… và bác Hanh trở lại thành công chúa {Luna}!
+cl_3|bachanh|Bác được cứu rồi! Cảm ơn Nhím! Từ nay bác sẽ đua cùng Nhím nhé!
+cl_4|nar|Trời sáng rồi! Nhím đã thắng Nữ hoàng Bóng Đêm!
+f_bachanh_ahead|bachanh|Bác vượt lên rồi nè!
+f_bachanh_first|bachanh|Bác về trước rồi! Lần sau Nhím thắng bác nhé!
+f_bachanh_hi|bachanh|Bác Hanh đua với Nhím nhé!
+f_bachanh_lose|bachanh|Không sao Nhím ơi, mình chơi lại nào!
+f_bachanh_wait|bachanh|Nhím ơi, bác chờ nè!
+f_bachanh_win|bachanh|Nhím về nhất! Bác tự hào lắm!
+f_bacuong_ahead|ba|Ba vượt lên nè!
+f_bacuong_first|ba|Ba về trước rồi! Lần sau Nhím thắng ba nhé!
+f_bacuong_hi|ba|Nhím ơi, đua với ba nào! Ba nhanh như tia chớp đó!
+f_bacuong_lose|ba|Không sao con ơi, mình thử lại nhé! Ba tin con!
+f_bacuong_wait|ba|Nhím ơi, chạy tiếp đi con!
+f_bacuong_win|ba|Nhím về nhất rồi! Con gái ba giỏi quá!
+f_batuyet_ahead|batuyet|Bà bay lên trước rồi nè!
+f_batuyet_first|batuyet|Bà về trước rồi! Lần sau Nhím thắng bà nhé!
+f_batuyet_hi|batuyet|Bà đua cùng Nhím đây! Bà bay nhẹ như mây!
+f_batuyet_lose|batuyet|Suýt nữa thôi cháu yêu! Mình thử lại nhé!
+f_batuyet_wait|batuyet|Bà chờ Nhím nhé!
+f_batuyet_win|batuyet|Nhím về nhất! Bà vui quá!
+f_meyen_ahead|me|Mẹ ở đằng trước nè Nhím!
+f_meyen_first|me|Mẹ về trước rồi! Lần sau Nhím thắng mẹ nha!
+f_meyen_hi|me|Nhím đua với mẹ nhé! Cố lên con yêu!
+f_meyen_lose|me|Suýt nữa thôi con! Mình chơi lại nhé!
+f_meyen_wait|me|Mẹ chờ Nhím nè!
+f_meyen_win|me|Nhím về nhất! Mẹ thương Nhím nhất!
+f_ongcuong_ahead|ong|Ông vượt lên rồi nhé!
+f_ongcuong_first|ong|Ông về trước rồi! Lần sau cháu thắng ông nhé!
+f_ongcuong_hi|ong|Ông cũng đua với cháu nhé! Ông chạy khoẻ lắm!
+f_ongcuong_lose|ong|Không sao cháu ơi, thử lại nào!
+f_ongcuong_wait|ong|Cháu ông chạy tiếp nào!
+f_ongcuong_win|ong|Cháu ông về nhất! Giỏi quá!
+final_2|nmm|Ha ha ha! Đấu với ta trên trời nào, cô bé!
+final_3|my|Trả lời đúng để né phép, và bắn phép vào Nữ hoàng nhé!
+go|my|Chạy nào!
+hunt_done|my|Cứu được cả hai bạn rồi! Nhím giỏi quá!
+hunt_free|my|Bong bóng vỡ rồi! Bạn được tự do rồi!
+hunt_next|my|Còn một bạn nữa! Đuổi tiếp nào!
+ln_a|my|a
+ln_aa|my|ớ
+ln_aw|my|á
+ln_b|my|bờ
+ln_c|my|cờ
+ln_d|my|dờ
+ln_dd|my|đờ
+ln_e|my|e
+ln_ee|my|ê
+ln_g|my|gờ
+ln_h|my|hờ
+ln_i|my|i ngắn
+ln_k|my|ca
+ln_l|my|lờ
+ln_m|my|mờ
+ln_n|my|nờ
+ln_o|my|o
+ln_oo|my|ô
+ln_ow|my|ơ
+ln_p|my|pờ
+ln_q|my|quờ
+ln_r|my|rờ
+ln_s|my|sờ
+ln_t|my|tờ
+ln_u|my|u
+ln_uw|my|ư
+ln_v|my|vờ
+ln_x|my|xờ
+ln_y|my|i dài
+lo_a|my|a… áo
+lo_aa|my|ớ… ấm
+lo_aw|my|á… ăn
+lo_b|my|bờ… bò
+lo_c|my|cờ… cá
+lo_d|my|dờ… dê
+lo_dd|my|đờ… đèn
+lo_e|my|e… em
+lo_ee|my|ê… ếch
+lo_g|my|gờ… gà
+lo_h|my|hờ… hoa
+lo_i|my|i ngắn… in
+lo_k|my|ca… kẹo
+lo_l|my|lờ… lá
+lo_m|my|mờ… mèo
+lo_n|my|nờ… nơ
+lo_o|my|o… ong
+lo_oo|my|ô… ô
+lo_ow|my|ơ… ớt
+lo_p|my|pờ… pin
+lo_q|my|quờ… quà
+lo_r|my|rờ… rùa
+lo_s|my|sờ… sao
+lo_t|my|tờ… táo
+lo_u|my|u… ủng
+lo_uw|my|ư… ướt
+lo_v|my|vờ… vịt
+lo_x|my|xờ… xe
+lo_y|my|i dài… yên
+lose|my|Hết tim rồi. Suýt nữa thôi!
+lv_1_1|nar|Rừng nấm. Hôm nay Nhím đua cùng cả nhà! Giữ nút để chạy, gặp chướng ngại thì bay lên nhé.
+lv_1_2|nar|Ối! Quái bóng tối trong rừng đuổi theo Nhím! Chạy mau tới cổng an toàn nào!
+lv_2_1|nar|Làng ngựa nhỏ {Ponyville}. Cả nhà đua qua làng nào!
+lv_2_2|nar|Yêu tinh và rồng nhỏ bắt bạn {Pinkie Pie} với bạn {Fluttershy} trong bong bóng! Đuổi theo cứu bạn nào!
+lv_3_1|nar|Đồi cầu vồng. Hôm nay cả nhà đua trên cầu vồng!
+lv_3_2|nar|Rồng nhỏ và ma bóng tối đuổi theo Nhím! Chạy qua đồi cầu vồng nào!
+lv_4_1|nar|Thành phố lâu đài {Canterlot}. Cả nhà đua tới lâu đài nào!
+lv_4_2|nar|Phù thuỷ bắt bạn {Cadance} và bạn Cầu Vồng! Đuổi theo cứu bạn nào!
+lv_final|nar|Bầu trời đêm. Nữ hoàng Bóng Đêm đang chờ Nhím ở trên cao!
+map_pick|my|Nhím muốn chơi ở đâu nào?
+n_0|my|Không
+n_1|my|Một
+n_10|my|Mười
+n_2|my|Hai
+n_3|my|Ba
+n_4|my|Bốn
+n_5|my|Năm
+n_6|my|Sáu
+n_7|my|Bảy
+n_8|my|Tám
+n_9|my|Chín
+qa_1_1|my|Một cộng một bằng mấy?
+qa_1_2|my|Một cộng hai bằng mấy?
+qa_1_3|my|Một cộng ba bằng mấy?
+qa_1_4|my|Một cộng bốn bằng mấy?
+qa_1_5|my|Một cộng năm bằng mấy?
+qa_1_6|my|Một cộng sáu bằng mấy?
+qa_1_7|my|Một cộng bảy bằng mấy?
+qa_1_8|my|Một cộng tám bằng mấy?
+qa_1_9|my|Một cộng chín bằng mấy?
+qa_2_1|my|Hai cộng một bằng mấy?
+qa_2_2|my|Hai cộng hai bằng mấy?
+qa_2_3|my|Hai cộng ba bằng mấy?
+qa_2_4|my|Hai cộng bốn bằng mấy?
+qa_2_5|my|Hai cộng năm bằng mấy?
+qa_2_6|my|Hai cộng sáu bằng mấy?
+qa_2_7|my|Hai cộng bảy bằng mấy?
+qa_2_8|my|Hai cộng tám bằng mấy?
+qa_3_1|my|Ba cộng một bằng mấy?
+qa_3_2|my|Ba cộng hai bằng mấy?
+qa_3_3|my|Ba cộng ba bằng mấy?
+qa_3_4|my|Ba cộng bốn bằng mấy?
+qa_3_5|my|Ba cộng năm bằng mấy?
+qa_3_6|my|Ba cộng sáu bằng mấy?
+qa_3_7|my|Ba cộng bảy bằng mấy?
+qa_4_1|my|Bốn cộng một bằng mấy?
+qa_4_2|my|Bốn cộng hai bằng mấy?
+qa_4_3|my|Bốn cộng ba bằng mấy?
+qa_4_4|my|Bốn cộng bốn bằng mấy?
+qa_4_5|my|Bốn cộng năm bằng mấy?
+qa_4_6|my|Bốn cộng sáu bằng mấy?
+qa_5_1|my|Năm cộng một bằng mấy?
+qa_5_2|my|Năm cộng hai bằng mấy?
+qa_5_3|my|Năm cộng ba bằng mấy?
+qa_5_4|my|Năm cộng bốn bằng mấy?
+qa_5_5|my|Năm cộng năm bằng mấy?
+qa_6_1|my|Sáu cộng một bằng mấy?
+qa_6_2|my|Sáu cộng hai bằng mấy?
+qa_6_3|my|Sáu cộng ba bằng mấy?
+qa_6_4|my|Sáu cộng bốn bằng mấy?
+qa_7_1|my|Bảy cộng một bằng mấy?
+qa_7_2|my|Bảy cộng hai bằng mấy?
+qa_7_3|my|Bảy cộng ba bằng mấy?
+qa_8_1|my|Tám cộng một bằng mấy?
+qa_8_2|my|Tám cộng hai bằng mấy?
+qa_9_1|my|Chín cộng một bằng mấy?
+ql_a_0|my|Chữ a đâu?
+ql_a_1|my|Nhím ơi, chữ a ở đâu?
+ql_a_2|my|Tìm chữ a nào!
+ql_aa_0|my|Chữ ớ đâu?
+ql_aa_1|my|Nhím ơi, chữ ớ ở đâu?
+ql_aa_2|my|Tìm chữ ớ nào!
+ql_aw_0|my|Chữ á đâu?
+ql_aw_1|my|Nhím ơi, chữ á ở đâu?
+ql_aw_2|my|Tìm chữ á nào!
+ql_b_0|my|Chữ bờ đâu?
+ql_b_1|my|Nhím ơi, chữ bờ ở đâu?
+ql_b_2|my|Tìm chữ bờ nào!
+ql_c_0|my|Chữ cờ đâu?
+ql_c_1|my|Nhím ơi, chữ cờ ở đâu?
+ql_c_2|my|Tìm chữ cờ nào!
+ql_d_0|my|Chữ dờ đâu?
+ql_d_1|my|Nhím ơi, chữ dờ ở đâu?
+ql_d_2|my|Tìm chữ dờ nào!
+ql_dd_0|my|Chữ đờ đâu?
+ql_dd_1|my|Nhím ơi, chữ đờ ở đâu?
+ql_dd_2|my|Tìm chữ đờ nào!
+ql_e_0|my|Chữ e đâu?
+ql_e_1|my|Nhím ơi, chữ e ở đâu?
+ql_e_2|my|Tìm chữ e nào!
+ql_ee_0|my|Chữ ê đâu?
+ql_ee_1|my|Nhím ơi, chữ ê ở đâu?
+ql_ee_2|my|Tìm chữ ê nào!
+ql_g_0|my|Chữ gờ đâu?
+ql_g_1|my|Nhím ơi, chữ gờ ở đâu?
+ql_g_2|my|Tìm chữ gờ nào!
+ql_h_0|my|Chữ hờ đâu?
+ql_h_1|my|Nhím ơi, chữ hờ ở đâu?
+ql_h_2|my|Tìm chữ hờ nào!
+ql_i_0|my|Chữ i ngắn đâu?
+ql_i_1|my|Nhím ơi, chữ i ngắn ở đâu?
+ql_i_2|my|Tìm chữ i ngắn nào!
+ql_k_0|my|Chữ ca đâu?
+ql_k_1|my|Nhím ơi, chữ ca ở đâu?
+ql_k_2|my|Tìm chữ ca nào!
+ql_l_0|my|Chữ lờ đâu?
+ql_l_1|my|Nhím ơi, chữ lờ ở đâu?
+ql_l_2|my|Tìm chữ lờ nào!
+ql_m_0|my|Chữ mờ đâu?
+ql_m_1|my|Nhím ơi, chữ mờ ở đâu?
+ql_m_2|my|Tìm chữ mờ nào!
+ql_n_0|my|Chữ nờ đâu?
+ql_n_1|my|Nhím ơi, chữ nờ ở đâu?
+ql_n_2|my|Tìm chữ nờ nào!
+ql_o_0|my|Chữ o đâu?
+ql_o_1|my|Nhím ơi, chữ o ở đâu?
+ql_o_2|my|Tìm chữ o nào!
+ql_oo_0|my|Chữ ô đâu?
+ql_oo_1|my|Nhím ơi, chữ ô ở đâu?
+ql_oo_2|my|Tìm chữ ô nào!
+ql_ow_0|my|Chữ ơ đâu?
+ql_ow_1|my|Nhím ơi, chữ ơ ở đâu?
+ql_ow_2|my|Tìm chữ ơ nào!
+ql_p_0|my|Chữ pờ đâu?
+ql_p_1|my|Nhím ơi, chữ pờ ở đâu?
+ql_p_2|my|Tìm chữ pờ nào!
+ql_q_0|my|Chữ quờ đâu?
+ql_q_1|my|Nhím ơi, chữ quờ ở đâu?
+ql_q_2|my|Tìm chữ quờ nào!
+ql_r_0|my|Chữ rờ đâu?
+ql_r_1|my|Nhím ơi, chữ rờ ở đâu?
+ql_r_2|my|Tìm chữ rờ nào!
+ql_s_0|my|Chữ sờ đâu?
+ql_s_1|my|Nhím ơi, chữ sờ ở đâu?
+ql_s_2|my|Tìm chữ sờ nào!
+ql_t_0|my|Chữ tờ đâu?
+ql_t_1|my|Nhím ơi, chữ tờ ở đâu?
+ql_t_2|my|Tìm chữ tờ nào!
+ql_u_0|my|Chữ u đâu?
+ql_u_1|my|Nhím ơi, chữ u ở đâu?
+ql_u_2|my|Tìm chữ u nào!
+ql_uw_0|my|Chữ ư đâu?
+ql_uw_1|my|Nhím ơi, chữ ư ở đâu?
+ql_uw_2|my|Tìm chữ ư nào!
+ql_v_0|my|Chữ vờ đâu?
+ql_v_1|my|Nhím ơi, chữ vờ ở đâu?
+ql_v_2|my|Tìm chữ vờ nào!
+ql_x_0|my|Chữ xờ đâu?
+ql_x_1|my|Nhím ơi, chữ xờ ở đâu?
+ql_x_2|my|Tìm chữ xờ nào!
+ql_y_0|my|Chữ i dài đâu?
+ql_y_1|my|Nhím ơi, chữ i dài ở đâu?
+ql_y_2|my|Tìm chữ i dài nào!
+qm_1_10|my|Một cộng mấy bằng mười?
+qm_1_2|my|Một cộng mấy bằng hai?
+qm_1_3|my|Một cộng mấy bằng ba?
+qm_1_4|my|Một cộng mấy bằng bốn?
+qm_1_5|my|Một cộng mấy bằng năm?
+qm_1_6|my|Một cộng mấy bằng sáu?
+qm_1_7|my|Một cộng mấy bằng bảy?
+qm_1_8|my|Một cộng mấy bằng tám?
+qm_1_9|my|Một cộng mấy bằng chín?
+qm_2_10|my|Hai cộng mấy bằng mười?
+qm_2_3|my|Hai cộng mấy bằng ba?
+qm_2_4|my|Hai cộng mấy bằng bốn?
+qm_2_5|my|Hai cộng mấy bằng năm?
+qm_2_6|my|Hai cộng mấy bằng sáu?
+qm_2_7|my|Hai cộng mấy bằng bảy?
+qm_2_8|my|Hai cộng mấy bằng tám?
+qm_2_9|my|Hai cộng mấy bằng chín?
+qm_3_10|my|Ba cộng mấy bằng mười?
+qm_3_4|my|Ba cộng mấy bằng bốn?
+qm_3_5|my|Ba cộng mấy bằng năm?
+qm_3_6|my|Ba cộng mấy bằng sáu?
+qm_3_7|my|Ba cộng mấy bằng bảy?
+qm_3_8|my|Ba cộng mấy bằng tám?
+qm_3_9|my|Ba cộng mấy bằng chín?
+qm_4_10|my|Bốn cộng mấy bằng mười?
+qm_4_5|my|Bốn cộng mấy bằng năm?
+qm_4_6|my|Bốn cộng mấy bằng sáu?
+qm_4_7|my|Bốn cộng mấy bằng bảy?
+qm_4_8|my|Bốn cộng mấy bằng tám?
+qm_4_9|my|Bốn cộng mấy bằng chín?
+qm_5_10|my|Năm cộng mấy bằng mười?
+qm_5_6|my|Năm cộng mấy bằng sáu?
+qm_5_7|my|Năm cộng mấy bằng bảy?
+qm_5_8|my|Năm cộng mấy bằng tám?
+qm_5_9|my|Năm cộng mấy bằng chín?
+qm_6_10|my|Sáu cộng mấy bằng mười?
+qm_6_7|my|Sáu cộng mấy bằng bảy?
+qm_6_8|my|Sáu cộng mấy bằng tám?
+qm_6_9|my|Sáu cộng mấy bằng chín?
+qm_7_10|my|Bảy cộng mấy bằng mười?
+qm_7_8|my|Bảy cộng mấy bằng tám?
+qm_7_9|my|Bảy cộng mấy bằng chín?
+qm_8_10|my|Tám cộng mấy bằng mười?
+qm_8_9|my|Tám cộng mấy bằng chín?
+qm_9_10|my|Chín cộng mấy bằng mười?
+qs_10_1|my|Mười trừ một bằng mấy?
+qs_10_2|my|Mười trừ hai bằng mấy?
+qs_10_3|my|Mười trừ ba bằng mấy?
+qs_10_4|my|Mười trừ bốn bằng mấy?
+qs_10_5|my|Mười trừ năm bằng mấy?
+qs_10_6|my|Mười trừ sáu bằng mấy?
+qs_10_7|my|Mười trừ bảy bằng mấy?
+qs_10_8|my|Mười trừ tám bằng mấy?
+qs_10_9|my|Mười trừ chín bằng mấy?
+qs_2_1|my|Hai trừ một bằng mấy?
+qs_3_1|my|Ba trừ một bằng mấy?
+qs_3_2|my|Ba trừ hai bằng mấy?
+qs_4_1|my|Bốn trừ một bằng mấy?
+qs_4_2|my|Bốn trừ hai bằng mấy?
+qs_4_3|my|Bốn trừ ba bằng mấy?
+qs_5_1|my|Năm trừ một bằng mấy?
+qs_5_2|my|Năm trừ hai bằng mấy?
+qs_5_3|my|Năm trừ ba bằng mấy?
+qs_5_4|my|Năm trừ bốn bằng mấy?
+qs_6_1|my|Sáu trừ một bằng mấy?
+qs_6_2|my|Sáu trừ hai bằng mấy?
+qs_6_3|my|Sáu trừ ba bằng mấy?
+qs_6_4|my|Sáu trừ bốn bằng mấy?
+qs_6_5|my|Sáu trừ năm bằng mấy?
+qs_7_1|my|Bảy trừ một bằng mấy?
+qs_7_2|my|Bảy trừ hai bằng mấy?
+qs_7_3|my|Bảy trừ ba bằng mấy?
+qs_7_4|my|Bảy trừ bốn bằng mấy?
+qs_7_5|my|Bảy trừ năm bằng mấy?
+qs_7_6|my|Bảy trừ sáu bằng mấy?
+qs_8_1|my|Tám trừ một bằng mấy?
+qs_8_2|my|Tám trừ hai bằng mấy?
+qs_8_3|my|Tám trừ ba bằng mấy?
+qs_8_4|my|Tám trừ bốn bằng mấy?
+qs_8_5|my|Tám trừ năm bằng mấy?
+qs_8_6|my|Tám trừ sáu bằng mấy?
+qs_8_7|my|Tám trừ bảy bằng mấy?
+qs_9_1|my|Chín trừ một bằng mấy?
+qs_9_2|my|Chín trừ hai bằng mấy?
+qs_9_3|my|Chín trừ ba bằng mấy?
+qs_9_4|my|Chín trừ bốn bằng mấy?
+qs_9_5|my|Chín trừ năm bằng mấy?
+qs_9_6|my|Chín trừ sáu bằng mấy?
+qs_9_7|my|Chín trừ bảy bằng mấy?
+qs_9_8|my|Chín trừ tám bằng mấy?
+ra_1_1|my|Một cộng một bằng hai!
+ra_1_2|my|Một cộng hai bằng ba!
+ra_1_3|my|Một cộng ba bằng bốn!
+ra_1_4|my|Một cộng bốn bằng năm!
+ra_1_5|my|Một cộng năm bằng sáu!
+ra_1_6|my|Một cộng sáu bằng bảy!
+ra_1_7|my|Một cộng bảy bằng tám!
+ra_1_8|my|Một cộng tám bằng chín!
+ra_1_9|my|Một cộng chín bằng mười!
+ra_2_1|my|Hai cộng một bằng ba!
+ra_2_2|my|Hai cộng hai bằng bốn!
+ra_2_3|my|Hai cộng ba bằng năm!
+ra_2_4|my|Hai cộng bốn bằng sáu!
+ra_2_5|my|Hai cộng năm bằng bảy!
+ra_2_6|my|Hai cộng sáu bằng tám!
+ra_2_7|my|Hai cộng bảy bằng chín!
+ra_2_8|my|Hai cộng tám bằng mười!
+ra_3_1|my|Ba cộng một bằng bốn!
+ra_3_2|my|Ba cộng hai bằng năm!
+ra_3_3|my|Ba cộng ba bằng sáu!
+ra_3_4|my|Ba cộng bốn bằng bảy!
+ra_3_5|my|Ba cộng năm bằng tám!
+ra_3_6|my|Ba cộng sáu bằng chín!
+ra_3_7|my|Ba cộng bảy bằng mười!
+ra_4_1|my|Bốn cộng một bằng năm!
+ra_4_2|my|Bốn cộng hai bằng sáu!
+ra_4_3|my|Bốn cộng ba bằng bảy!
+ra_4_4|my|Bốn cộng bốn bằng tám!
+ra_4_5|my|Bốn cộng năm bằng chín!
+ra_4_6|my|Bốn cộng sáu bằng mười!
+ra_5_1|my|Năm cộng một bằng sáu!
+ra_5_2|my|Năm cộng hai bằng bảy!
+ra_5_3|my|Năm cộng ba bằng tám!
+ra_5_4|my|Năm cộng bốn bằng chín!
+ra_5_5|my|Năm cộng năm bằng mười!
+ra_6_1|my|Sáu cộng một bằng bảy!
+ra_6_2|my|Sáu cộng hai bằng tám!
+ra_6_3|my|Sáu cộng ba bằng chín!
+ra_6_4|my|Sáu cộng bốn bằng mười!
+ra_7_1|my|Bảy cộng một bằng tám!
+ra_7_2|my|Bảy cộng hai bằng chín!
+ra_7_3|my|Bảy cộng ba bằng mười!
+ra_8_1|my|Tám cộng một bằng chín!
+ra_8_2|my|Tám cộng hai bằng mười!
+ra_9_1|my|Chín cộng một bằng mười!
+rotate|my|Nhím ơi, xoay ngang máy nhé!
+rs_10_1|my|Mười trừ một bằng chín!
+rs_10_2|my|Mười trừ hai bằng tám!
+rs_10_3|my|Mười trừ ba bằng bảy!
+rs_10_4|my|Mười trừ bốn bằng sáu!
+rs_10_5|my|Mười trừ năm bằng năm!
+rs_10_6|my|Mười trừ sáu bằng bốn!
+rs_10_7|my|Mười trừ bảy bằng ba!
+rs_10_8|my|Mười trừ tám bằng hai!
+rs_10_9|my|Mười trừ chín bằng một!
+rs_2_1|my|Hai trừ một bằng một!
+rs_3_1|my|Ba trừ một bằng hai!
+rs_3_2|my|Ba trừ hai bằng một!
+rs_4_1|my|Bốn trừ một bằng ba!
+rs_4_2|my|Bốn trừ hai bằng hai!
+rs_4_3|my|Bốn trừ ba bằng một!
+rs_5_1|my|Năm trừ một bằng bốn!
+rs_5_2|my|Năm trừ hai bằng ba!
+rs_5_3|my|Năm trừ ba bằng hai!
+rs_5_4|my|Năm trừ bốn bằng một!
+rs_6_1|my|Sáu trừ một bằng năm!
+rs_6_2|my|Sáu trừ hai bằng bốn!
+rs_6_3|my|Sáu trừ ba bằng ba!
+rs_6_4|my|Sáu trừ bốn bằng hai!
+rs_6_5|my|Sáu trừ năm bằng một!
+rs_7_1|my|Bảy trừ một bằng sáu!
+rs_7_2|my|Bảy trừ hai bằng năm!
+rs_7_3|my|Bảy trừ ba bằng bốn!
+rs_7_4|my|Bảy trừ bốn bằng ba!
+rs_7_5|my|Bảy trừ năm bằng hai!
+rs_7_6|my|Bảy trừ sáu bằng một!
+rs_8_1|my|Tám trừ một bằng bảy!
+rs_8_2|my|Tám trừ hai bằng sáu!
+rs_8_3|my|Tám trừ ba bằng năm!
+rs_8_4|my|Tám trừ bốn bằng bốn!
+rs_8_5|my|Tám trừ năm bằng ba!
+rs_8_6|my|Tám trừ sáu bằng hai!
+rs_8_7|my|Tám trừ bảy bằng một!
+rs_9_1|my|Chín trừ một bằng tám!
+rs_9_2|my|Chín trừ hai bằng bảy!
+rs_9_3|my|Chín trừ ba bằng sáu!
+rs_9_4|my|Chín trừ bốn bằng năm!
+rs_9_5|my|Chín trừ năm bằng bốn!
+rs_9_6|my|Chín trừ sáu bằng ba!
+rs_9_7|my|Chín trừ bảy bằng hai!
+rs_9_8|my|Chín trừ tám bằng một!
+s_ba|my|ba
+s_bo|my|bo
+s_ca|my|ca
+s_dden|my|đen
+s_dee|my|dê
+s_ga|my|ga
+s_hoa|my|hoa
+s_keo|my|keo
+s_la|my|la
+s_ma|my|ma
+s_me|my|me
+s_meo|my|meo
+s_now|my|nơ
+s_pin|my|pin
+s_qua|my|qua
+s_rua|my|rua
+s_sao|my|sao
+s_tao|my|tao
+s_too|my|tô
+s_ve|my|ve
+s_vits|my|vít
+s_xe|my|xe
+safe|my|Tới cổng an toàn rồi! Nhím làm phép tẩy bóng tối nào!
+shield|my|Khiên phép thuật! Quái văng ra xa rồi!
+sp_ba|my|Mình ghép chữ ba nhé!
+sp_baf|my|Mình ghép chữ bà nhé!
+sp_bof|my|Mình ghép chữ bò nhé!
+sp_cas|my|Mình ghép chữ cá nhé!
+sp_dee|my|Mình ghép chữ dê nhé!
+sp_gaf|my|Mình ghép chữ gà nhé!
+sp_la|my|Mình ghép chữ la nhé!
+sp_las|my|Mình ghép chữ lá nhé!
+sp_ma|my|Mình ghép chữ ma nhé!
+sp_mej|my|Mình ghép chữ mẹ nhé!
+sp_now|my|Mình ghép chữ nơ nhé!
+sp_too|my|Mình ghép chữ tô nhé!
+sp_vex|my|Mình ghép chữ vẽ nhé!
+sp_xe|my|Mình ghép chữ xe nhé!
+t_hoi|my|hỏi
+t_huyen|my|huyền
+t_nang|my|nặng
+t_nga|my|ngã
+t_sac|my|sắc
+tf_hoi|my|Dấu hỏi đâu nhỉ?
+tf_huyen|my|Dấu huyền đâu nhỉ?
+tf_nang|my|Dấu nặng đâu nhỉ?
+tf_nga|my|Dấu ngã đâu nhỉ?
+tf_sac|my|Dấu sắc đâu nhỉ?
+thx_cadance|friend|Cô là công chúa {Cadance}! Cảm ơn Nhím nhé!
+thx_fluttershy|friend|Mình là {Fluttershy}… Cảm ơn Nhím nhiều lắm!
+thx_pinkie|friend|Mình là {Pinkie Pie}! Cảm ơn Nhím, mình mở tiệc mừng nhé!
+thx_rainbowswirl|friend|Mình là Cầu Vồng! Cảm ơn Nhím đã cứu mình!
+tl_hoi|my|dấu hỏi
+tl_huyen|my|dấu huyền
+tl_nang|my|dấu nặng
+tl_nga|my|dấu ngã
+tl_sac|my|dấu sắc
+unlock_aura|my|Nhím có hào quang sao lấp lánh rồi!
+unlock_crown|my|Nhím có vòng hoa mới rồi!
+unlock_trail|my|Nhím có vệt cầu vồng mới rồi!
+v_a|my|a
+v_aa|my|ớ
+v_aam|my|âm
+v_ao|my|ao
+v_aw|my|á
+v_awn|my|ăn
+v_e|my|e
+v_ee|my|ê
+v_eechs|my|ếch
+v_em|my|em
+v_en|my|en
+v_eo|my|eo
+v_i|my|i
+v_in|my|in
+v_its|my|ít
+v_o|my|o
+v_oa|my|oa
+v_ong|my|ong
+v_oo|my|ô
+v_ow|my|ơ
+v_owts|my|ớt
+v_u|my|u
+v_ua|my|ua
+v_ung|my|ung
+v_uwow|my|ưa
+v_uwowts|my|ướt
+v_yee|my|ia
+v_yeen|my|yên
+w_aams|my|ấm
+w_aos|my|áo
+w_baf|my|bà
+w_bof|my|bò
+w_cas|my|cá
+w_ddenf|my|đèn
+w_gaf|my|gà
+w_keoj|my|kẹo
+w_las|my|lá
+w_mej|my|mẹ
+w_meof|my|mèo
+w_quaf|my|quà
+w_ruaf|my|rùa
+w_taos|my|táo
+w_ungr|my|ủng
+w_vex|my|vẽ
+w_vitj|my|vịt
+wave|my|Ôi, nhiều quái quá! Trả lời đúng hai câu để bật khiên phép thuật!
+wcard_1|nar|Nhím đã chạy qua khu rừng nấm!
+wcard_2|nar|Nhím đã chạy qua làng ngựa nhỏ!
+wcard_3|nar|Nhím đã chạy qua đồi cầu vồng!
+wcard_4|nar|Nhím đã tới thành phố lâu đài!
+win_chase|my|Nhím chạy giỏi quá! Thoát được quái rồi!
+win_race|my|Về đích rồi!
